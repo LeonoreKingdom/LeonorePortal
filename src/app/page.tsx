@@ -1,13 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { 
   Sparkles, 
   Layers, 
   Compass, 
-  FolderKanban, 
-  Wrench, 
-  BookOpen, 
   X, 
   ArrowUpDown,
   RefreshCw
@@ -15,7 +12,6 @@ import {
 import { MOCK_APPS, AppItem } from "@/data/mock-apps";
 import { AppCard } from "@/components/app-card";
 import { SearchBar } from "@/components/search-bar";
-import Link from "next/link";
 
 const CATEGORIES = [
   "Semua",
@@ -182,48 +178,6 @@ export default function AppPortalPage() {
               <div className="text-lg sm:text-xl font-bold text-indigo-400">{CATEGORIES.length - 1}</div>
             </div>
           </div>
-        </div>
-
-        {/* Quick Modules */}
-        <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-          <Link
-            href="/projects"
-            className="group flex items-center gap-3.5 sm:gap-4 rounded-xl border border-slate-800 bg-slate-900/40 p-3.5 sm:p-4 transition-all hover:border-indigo-500/40 hover:bg-slate-900/80"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
-              <FolderKanban className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-white">Proyek & Kanban</div>
-              <div className="text-xs text-slate-400">Papan tugas & catatan Markdown</div>
-            </div>
-          </Link>
-
-          <Link
-            href="/knowledge-base"
-            className="group flex items-center gap-3.5 sm:gap-4 rounded-xl border border-slate-800 bg-slate-900/40 p-3.5 sm:p-4 transition-all hover:border-sky-500/40 hover:bg-slate-900/80"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-white">Knowledge Base</div>
-              <div className="text-xs text-slate-400">Wiki dan dokumentasi terstruktur</div>
-            </div>
-          </Link>
-
-          <Link
-            href="/toolbox"
-            className="group flex items-center gap-3.5 sm:gap-4 rounded-xl border border-slate-800 bg-slate-900/40 p-3.5 sm:p-4 transition-all hover:border-emerald-500/40 hover:bg-slate-900/80 sm:col-span-2 lg:col-span-1"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-              <Wrench className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-white">Toolbox Client-Side</div>
-              <div className="text-xs text-slate-400">Media, Text, Diff & Utilities</div>
-            </div>
-          </Link>
         </div>
 
         {/* Filter and Search Bar */}
