@@ -30,7 +30,6 @@ import {
   ShieldAlert
 } from "lucide-react";
 import { ToolItem, ToolboxCategory } from "@/data/mock-toolbox";
-import { cn } from "@/lib/utils";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Calculator,
@@ -86,11 +85,13 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
 
 export function ToolCard({ tool, category, searchQuery }: ToolCardProps) {
   const IconComponent = ICON_MAP[tool.icon] || Sparkles;
-
   const categoryColor = category?.color || "#6366f1";
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/50 hover:bg-slate-900/90 hover:shadow-xl hover:shadow-indigo-500/10">
+    <Link
+      href={`/toolbox/${tool.slug}`}
+      className="group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/50 hover:bg-slate-900/90 hover:shadow-xl hover:shadow-indigo-500/10 cursor-pointer"
+    >
       <div>
         {/* Top bar: Icon, Client badge & Popular */}
         <div className="flex items-start justify-between gap-3">
@@ -121,11 +122,9 @@ export function ToolCard({ tool, category, searchQuery }: ToolCardProps) {
 
         {/* Title & Description */}
         <div className="mt-4">
-          <Link href={`/toolbox/${tool.slug}`}>
-            <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
-              <HighlightText text={tool.name} query={searchQuery} />
-            </h3>
-          </Link>
+          <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
+            <HighlightText text={tool.name} query={searchQuery} />
+          </h3>
           <p className="mt-1.5 text-xs text-slate-400 line-clamp-2 leading-relaxed">
             <HighlightText text={tool.description} query={searchQuery} />
           </p>
@@ -144,20 +143,13 @@ export function ToolCard({ tool, category, searchQuery }: ToolCardProps) {
         </div>
       </div>
 
-      {/* Action Footer */}
+      {/* Action Footer: Subtle slug indicator */}
       <div className="mt-5 pt-3 border-t border-slate-800/60 flex items-center justify-between">
-        <span className="text-[11px] font-mono text-slate-500">
+        <span className="text-[11px] font-mono text-slate-500 group-hover:text-indigo-400 transition-colors">
           /{tool.slug}
         </span>
-
-        <Link
-          href={`/toolbox/${tool.slug}`}
-          className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300 group-hover:translate-x-0.5 transition-all"
-        >
-          <span>Buka Alat</span>
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        <ArrowRight className="h-3.5 w-3.5 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
       </div>
-    </div>
+    </Link>
   );
 }
