@@ -17,7 +17,17 @@ import {
   KeyRound, 
   ArrowRight,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  CalendarClock,
+  FileDown,
+  Film,
+  Video,
+  Headphones,
+  FileStack,
+  FileSpreadsheet,
+  TableProperties,
+  Regex as RegexIcon,
+  ShieldAlert
 } from "lucide-react";
 import { ToolItem, ToolboxCategory } from "@/data/mock-toolbox";
 import { cn } from "@/lib/utils";
@@ -36,6 +46,16 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   GitCompare,
   QrCode,
   KeyRound,
+  CalendarClock,
+  FileDown,
+  Film,
+  Video,
+  Headphones,
+  FileStack,
+  FileSpreadsheet,
+  TableProperties,
+  Regex: RegexIcon,
+  ShieldAlert,
 };
 
 interface ToolCardProps {

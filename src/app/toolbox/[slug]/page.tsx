@@ -22,6 +22,19 @@ import { HtmlEditorTool } from "@/components/toolbox/html-editor-tool";
 import { DiffCheckerTool } from "@/components/toolbox/diff-checker-tool";
 import { QrGeneratorTool } from "@/components/toolbox/qr-generator-tool";
 import { PasswordGeneratorTool } from "@/components/toolbox/password-generator-tool";
+
+// 10 New Tools
+import { VideoGifTool } from "@/components/toolbox/video-gif-tool";
+import { PdfToolkitTool } from "@/components/toolbox/pdf-toolkit-tool";
+import { ImageCompressorTool } from "@/components/toolbox/image-compressor-tool";
+import { SpreadsheetConverterTool } from "@/components/toolbox/spreadsheet-converter-tool";
+import { VideoConverterTool } from "@/components/toolbox/video-converter-tool";
+import { AudioConverterTool } from "@/components/toolbox/audio-converter-tool";
+import { PdfToImageTool } from "@/components/toolbox/pdf-to-image-tool";
+import { RegexTesterTool } from "@/components/toolbox/regex-tester-tool";
+import { JwtInspectorTool } from "@/components/toolbox/jwt-inspector-tool";
+import { UnixTimestampTool } from "@/components/toolbox/unix-timestamp-tool";
+
 import { ToolCard } from "@/components/tool-card";
 
 interface PageProps {
@@ -62,16 +75,36 @@ export default function ToolboxDetailPage({ params }: PageProps) {
         return <UnitConverterTool />;
       case "timer-stopwatch":
         return <TimerStopwatchTool />;
+      case "unix-timestamp":
+        return <UnixTimestampTool />;
+      case "image-compressor":
+        return <ImageCompressorTool />;
       case "image-converter":
         return <ImageTools mode="convert" />;
       case "image-resizer":
         return <ImageTools mode="resize" />;
-      case "color-picker":
-        return <ColorPickerTool />;
+      case "video-gif-converter":
+        return <VideoGifTool />;
+      case "video-converter":
+        return <VideoConverterTool />;
+      case "audio-converter":
+        return <AudioConverterTool />;
       case "video-to-audio":
         return <VideoAudioTool />;
+      case "pdf-toolkit":
+        return <PdfToolkitTool />;
+      case "pdf-to-image":
+        return <PdfToImageTool />;
       case "image-to-pdf":
         return <ImageToPdfTool />;
+      case "color-picker":
+        return <ColorPickerTool />;
+      case "spreadsheet-converter":
+        return <SpreadsheetConverterTool />;
+      case "regex-tester":
+        return <RegexTesterTool />;
+      case "jwt-inspector":
+        return <JwtInspectorTool />;
       case "text-json-formatter":
         return <TextJsonTool />;
       case "html-live-editor":
