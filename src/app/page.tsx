@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Sparkles, 
   Layers, 
@@ -9,7 +9,8 @@ import {
   Wrench, 
   BookOpen, 
   X, 
-  ArrowUpDown
+  ArrowUpDown,
+  RefreshCw
 } from "lucide-react";
 import { MOCK_APPS, AppItem } from "@/data/mock-apps";
 import { AppCard } from "@/components/app-card";
@@ -34,7 +35,30 @@ export default function AppPortalPage() {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("default");
-  const [apps] = useState<AppItem[]>(MOCK_APPS);
+  const [apps, setApps] = useState<AppItem[]>(MOCK_APPS);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Fetch real-time apps from database (Turso / SQLite)
+  const fetchApps = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/apps");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setApps(json.data);
+        }
+      }
+    } catch (err) {
+      console.error("Gagal mengambil data aplikasi dari database:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApps();
+  }, []);
 
   // Filter & Deterministically Sort apps
   const filteredAndSortedApps = useMemo(() => {
@@ -140,9 +164,18 @@ export default function AppPortalPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 sm:px-4 py-2 sm:py-2.5">
-              <div className="text-[11px] sm:text-xs text-slate-400">Total Aplikasi</div>
-              <div className="text-lg sm:text-xl font-bold text-white">{apps.length}</div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2">
+              <div>
+                <div className="text-[11px] sm:text-xs text-slate-400">Total Aplikasi</div>
+                <div className="text-lg sm:text-xl font-bold text-white">{apps.length}</div>
+              </div>
+              <button 
+                onClick={fetchApps} 
+                title="Segarkan data dari database"
+                className="p-1.5 text-slate-500 hover:text-indigo-400 transition-colors rounded-lg hover:bg-slate-800"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
             </div>
             <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 sm:px-4 py-2 sm:py-2.5">
               <div className="text-[11px] sm:text-xs text-slate-400">Kategori</div>
