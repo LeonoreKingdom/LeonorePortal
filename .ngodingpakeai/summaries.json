@@ -1,0 +1,257 @@
+{
+  ".claude/skills/ngodingpakeai/SKILL.md": {
+    "summary": "Dokumentasi dan panduan integrasi skill NgodingPakeAI untuk coding agent Claude."
+  },
+  ".codex/skills/ngodingpakeai/SKILL.md": {
+    "summary": "Dokumentasi dan instruksi integrasi skill NgodingPakeAI untuk eksekusi workflow Codex."
+  },
+  ".gitattributes": {
+    "summary": "Konfigurasi Git attributes untuk normalisasi line ending dan penanganan file biner repository."
+  },
+  ".ngodingpakeaiignore": {
+    "summary": "Daftar pola berkas dan direktori yang diabaikan dalam proses pemindaian dan sinkronisasi NgodingPakeAI."
+  },
+  "AGENTS.md": {
+    "summary": "Instruksi aturan sistem dan protokol sinkronisasi NgodingPakeAI untuk agen AI pengembang."
+  },
+  "next-env.d.ts": {
+    "summary": "Deklarasi tipe TypeScript otomatis dari Next.js untuk integrasi kompilasi kode dan modul global."
+  },
+  "next.config.mjs": {
+    "summary": "Konfigurasi Next.js untuk aplikasi web LeonorePortal termasuk optimasi build dan routing."
+  },
+  "package-lock.json": {
+    "summary": "Pohon dependensi terkunci npm untuk menjaga konsistensi versi paket pustaka proyek LeonorePortal."
+  },
+  "package.json": {
+    "summary": "Manifes konfigurasi dependensi modul, metadata proyek LeonorePortal, skrip build, lint, dan start."
+  },
+  "postcss.config.js": {
+    "summary": "Konfigurasi plugin PostCSS untuk memproses Tailwind CSS dan autoprefixer pada aplikasi."
+  },
+  "README.md": {
+    "summary": "Dokumentasi pengantar utama mengenai proyek repositori aplikasi portal LeonorePortal."
+  },
+  "src/app/api/obsidian/config/route.ts": {
+    "summary": "Endpoint REST API untuk mengambil (GET) dan memperbarui (PUT) konfigurasi koneksi direktori Obsidian Vault."
+  },
+  "src/app/api/obsidian/export/route.ts": {
+    "summary": "Endpoint REST API untuk mengekspor proyek dan artikel wiki ke file Markdown dalam direktori Obsidian Vault."
+  },
+  "src/app/api/obsidian/import/route.ts": {
+    "summary": "Endpoint REST API untuk mengimpor dan memindai berkas Markdown dari Obsidian Vault ke dalam basis data Leonore."
+  },
+  "src/app/api/obsidian/items/route.ts": {
+    "summary": "Endpoint REST API untuk mendapatkan daftar item tersinkron dan memperbarui arah preferensi sinkronisasi berkas."
+  },
+  "src/app/api/obsidian/sync/route.ts": {
+    "summary": "Endpoint REST API untuk memicu proses sinkronisasi dua arah penuh antara LeonorePortal dan Obsidian Vault."
+  },
+  "src/app/api/obsidian/test-connection/route.ts": {
+    "summary": "Endpoint REST API untuk menguji dan memvalidasi akses direktori Obsidian Vault lokal serta mengecek folder .obsidian."
+  },
+  "src/app/api/projects/route.ts": {
+    "summary": "Endpoint REST API untuk mengambil seluruh daftar proyek aktif dan membuat entitas proyek baru ke database SQLite."
+  },
+  "src/app/api/projects/[id]/notes/route.ts": {
+    "summary": "Endpoint REST API untuk mengambil dan memperbarui catatan Markdown khusus pada level proyek."
+  },
+  "src/app/api/projects/[id]/route.ts": {
+    "summary": "Endpoint REST API untuk mengambil detail, memperbarui data proyek, dan menghapus proyek berdasarkan ID."
+  },
+  "src/app/api/tasks/reorder/route.ts": {
+    "summary": "Endpoint REST API untuk memperbarui urutan posisi kartu tugas Kanban dalam transaksi batch aman."
+  },
+  "src/app/api/tasks/route.ts": {
+    "summary": "Endpoint REST API untuk mengambil daftar tugas proyek dan membuat kartu tugas Kanban baru."
+  },
+  "src/app/api/tasks/[id]/notes/route.ts": {
+    "summary": "Endpoint REST API untuk mengelola dan memperbarui catatan Markdown pada suatu tugas Kanban spesifik."
+  },
+  "src/app/api/tasks/[id]/route.ts": {
+    "summary": "Endpoint REST API untuk mengambil, memperbarui kolom status atau rincian tugas, serta menghapus tugas berdasarkan ID."
+  },
+  "src/app/api/wiki/categories/route.ts": {
+    "summary": "Endpoint REST API untuk mengelola kategori dokumentasi Knowledge Base termasuk listing dan pembuatan kategori."
+  },
+  "src/app/api/wiki/route.ts": {
+    "summary": "Endpoint REST API untuk mengambil daftar artikel wiki dengan filter kategori serta membuat artikel baru."
+  },
+  "src/app/api/wiki/search/route.ts": {
+    "summary": "Endpoint REST API pencarian dokumen Knowledge Base berdasarkan kata kunci pada judul, isi, dan tag artikel."
+  },
+  "src/app/api/wiki/[slug]/route.ts": {
+    "summary": "Endpoint REST API untuk mendapatkan detail artikel, memperbarui isi Markdown, dan menghapus artikel wiki berdasarkan slug."
+  },
+  "src/app/globals.css": {
+    "summary": "Konfigurasi stylesheet global Tailwind CSS yang memuat tema gelap (dark mode), tipografi, dan variabel animasi."
+  },
+  "src/app/knowledge-base/page.tsx": {
+    "summary": "Halaman katalog utama Knowledge Base yang menampilkan direktori kategori wiki, pencarian interaktif, dan daftar artikel."
+  },
+  "src/app/knowledge-base/[slug]/page.tsx": {
+    "summary": "Halaman pembaca dan editor artikel Knowledge Base dengan dukungan render Markdown, daftar isi, dan tombol edit."
+  },
+  "src/app/layout.tsx": {
+    "summary": "Komponen root layout Next.js yang menyediakan navbar global, struktur HTML, font Inter, dan metadata situs."
+  },
+  "src/app/obsidian-sync/page.tsx": {
+    "summary": "Halaman dashboard sinkronisasi Obsidian Vault dengan metrik status, daftar berkas, trigger sinkron, dan riwayat log."
+  },
+  "src/app/page.tsx": {
+    "summary": "Halaman beranda App Portal yang menampilkan daftar semua aplikasi internal, navigasi cepat, dan launcher utilitas."
+  },
+  "src/app/projects/page.tsx": {
+    "summary": "Halaman katalog Papan Proyek yang menampilkan kartu ringkasan proyek, progres tugas, filter kategori, dan modal tambah proyek."
+  },
+  "src/app/projects/[id]/page.tsx": {
+    "summary": "Halaman detail papan proyek Kanban interaktif dengan kolom Todo, Sedang Dikerjakan, dan Selesai serta editor catatan proyek."
+  },
+  "src/app/toolbox/page.tsx": {
+    "summary": "Halaman katalog utama Toolbox yang menampilkan seluruh perkakas client-side terorganisir per kategori."
+  },
+  "src/app/toolbox/[slug]/page.tsx": {
+    "summary": "Halaman dinamis routing perkakas Toolbox client-side yang memuat komponen utilitas sesuai slug URL."
+  },
+  "src/components/app-card.tsx": {
+    "summary": "Komponen kartu aplikasi untuk katalog App Portal dengan badge status online, tag kategori, dan tautan pembuka."
+  },
+  "src/components/delete-confirm-modal.tsx": {
+    "summary": "Komponen modal dialog konfirmasi penghapusan entitas dengan peringatan risiko dan tombol aksi."
+  },
+  "src/components/kanban-board.tsx": {
+    "summary": "Komponen papan Kanban interaktif dengan kolom status Todo, In Progress, Done dan penataan kartu tugas."
+  },
+  "src/components/kanban-card.tsx": {
+    "summary": "Komponen kartu tugas Kanban dengan indikator prioritas, tanggal tenggat, badge status, dan opsi tindakan tugas."
+  },
+  "src/components/markdown-editor.tsx": {
+    "summary": "Komponen editor Markdown dengan bilah tombol formatting teks (Bold, Italic, List, Link, Code) dan tab pratinjau live."
+  },
+  "src/components/markdown-renderer.tsx": {
+    "summary": "Komponen renderer teks format Markdown menjadi HTML bersih dengan syntax highlighting blok kode dan tabel."
+  },
+  "src/components/navbar.tsx": {
+    "summary": "Komponen navigasi header global dengan tautan menu App Portal, Proyek, Knowledge Base, Toolbox, dan Obsidian Sync."
+  },
+  "src/components/project-card.tsx": {
+    "summary": "Komponen kartu proyek yang menampilkan judul, deskripsi, bar progress tugas, dan tag kategori proyek."
+  },
+  "src/components/project-modal.tsx": {
+    "summary": "Komponen modal formulir tambah dan edit data proyek (judul, deskripsi, kategori, prioritas, catatan markdown)."
+  },
+  "src/components/search-bar.tsx": {
+    "summary": "Komponen input pencarian cepat dengan icon search dan tombol pembersih kata kunci."
+  },
+  "src/components/sync-summary-modal.tsx": {
+    "summary": "Komponen modal ringkasan hasil sinkronisasi Obsidian Vault yang menampilkan jumlah berkas ekspor/impor dan durasi proses."
+  },
+  "src/components/task-modal.tsx": {
+    "summary": "Komponen modal pembuatan dan pengubahan kartu tugas Kanban dengan form tenggat waktu, prioritas, dan catatan."
+  },
+  "src/components/tool-card.tsx": {
+    "summary": "Komponen kartu representasi perkakas Toolbox pada katalog utama dengan badge kategori dan ikon representatif."
+  },
+  "src/components/toolbox/calculator-tool.tsx": {
+    "summary": "Perkakas kalkulator interaktif client-side yang mendukung operasi hitung dasar, fungsi ilmiah, dan riwayat perhitungan."
+  },
+  "src/components/toolbox/color-picker-tool.tsx": {
+    "summary": "Perkakas pemilih warna interaktif, EyeDropper API, konversi format HEX/RGB/HSL/CMYK, serta palet harmoni warna."
+  },
+  "src/components/toolbox/diff-checker-tool.tsx": {
+    "summary": "Perkakas komparasi perbedaan dua teks atau berkas baris demi baris menggunakan algoritma LCS dengan pratinjau visual."
+  },
+  "src/components/toolbox/html-editor-tool.tsx": {
+    "summary": "Perkakas live editor HTML, CSS, dan JavaScript dengan sandbox iframe pratinjau seketika dan template pemula."
+  },
+  "src/components/toolbox/image-to-pdf-tool.tsx": {
+    "summary": "Perkakas konversi multi-gambar menjadi dokumen PDF binary standar langsung di browser tanpa perantara server."
+  },
+  "src/components/toolbox/image-tools.tsx": {
+    "summary": "Perkakas konversi format gambar (PNG, JPEG, WebP) dan pengubah ukuran resolusi gambar menggunakan HTML5 Canvas."
+  },
+  "src/components/toolbox/password-generator-tool.tsx": {
+    "summary": "Perkakas pembuat kata sandi acak yang aman secara kriptografis dengan parameter panjang karakter dan pengukur kekuatan."
+  },
+  "src/components/toolbox/qr-generator-tool.tsx": {
+    "summary": "Perkakas generator kode QR SVG dan PNG interaktif untuk teks, URL, WiFi, dan email dengan kustomisasi warna."
+  },
+  "src/components/toolbox/text-json-tool.tsx": {
+    "summary": "Perkakas pemformat teks dan JSON, validasi sintaksis, prettify/minify, text casing, serta encoder/decoder Base64/URL."
+  },
+  "src/components/toolbox/timer-stopwatch-tool.tsx": {
+    "summary": "Perkakas hitung mundur (timer) dengan suara notifikasi dan stopwatch presisi dengan perekaman waktu lap."
+  },
+  "src/components/toolbox/unit-converter-tool.tsx": {
+    "summary": "Perkakas pengonversi satuan panjang, massa/berat, suhu, kapasitas penyimpanan digital, dan volume secara instan."
+  },
+  "src/components/toolbox/video-audio-tool.tsx": {
+    "summary": "Perkakas ekstraksi audio dari berkas video lokal menjadi file WAV PCM murni menggunakan Web Audio API di peramban."
+  },
+  "src/components/vault-connector-modal.tsx": {
+    "summary": "Komponen modal konfigurasi direktori Obsidian Vault lokal dengan penguji validitas akses dan opsi otomatisasi."
+  },
+  "src/components/wiki-modal.tsx": {
+    "summary": "Komponen modal formulir tambah dan edit artikel Knowledge Base dengan editor Markdown dan penentuan tag kategori."
+  },
+  "src/components/wiki-page-card.tsx": {
+    "summary": "Komponen kartu pratinjau artikel wiki Knowledge Base dengan estimasi waktu baca, tag, dan tanggal update."
+  },
+  "src/data/mock-apps.ts": {
+    "summary": "Koleksi data tiruan awal daftar aplikasi yang ditampilkan pada dashboard katalog App Portal."
+  },
+  "src/data/mock-obsidian.ts": {
+    "summary": "Struktur tipe data dan data tiruan status sinkronisasi, konfigurasi vault, berkas markdown, serta log aktivitas Obsidian."
+  },
+  "src/data/mock-projects.ts": {
+    "summary": "Koleksi data tiruan proyek, kolom tugas Kanban, dan catatan markdown proyek awal untuk seeder basis data."
+  },
+  "src/data/mock-toolbox.ts": {
+    "summary": "Daftar metadata dan definisi katalog seluruh perkakas utilitas client-side dalam modul Toolbox."
+  },
+  "src/data/mock-wiki.ts": {
+    "summary": "Koleksi data tiruan kategori dan artikel dokumentasi awal untuk Knowledge Base wiki."
+  },
+  "src/lib/db/index.ts": {
+    "summary": "Modul inisialisasi koneksi basis data SQLite lokal menggunakan better-sqlite3 serta seeder data otomatis."
+  },
+  "src/lib/db/schema.sql": {
+    "summary": "Skema migrasi tabel SQL untuk database SQLite mencakup projects, tasks, wiki_articles, portal_apps, dan obsidian sync."
+  },
+  "src/lib/services/obsidian-export.service.ts": {
+    "summary": "Layanan konversi dan ekspor proyek Kanban dan artikel wiki menjadi file Markdown lengkap dengan YAML frontmatter ke Vault."
+  },
+  "src/lib/services/obsidian-import.service.ts": {
+    "summary": "Layanan pemindaian dan impor berkas Markdown dari Obsidian Vault ke database SQLite LeonorePortal."
+  },
+  "src/lib/services/obsidian-sync.service.ts": {
+    "summary": "Mesin sinkronisasi dua arah terintegrasi yang menyelaraskan data lokal LeonorePortal dengan direktori Obsidian Vault."
+  },
+  "src/lib/services/obsidian.service.ts": {
+    "summary": "Layanan manajemen basis data untuk konfigurasi vault, riwayat log aktivitas sinkronisasi, dan preferensi item."
+  },
+  "src/lib/services/project.service.ts": {
+    "summary": "Layanan CRUD data proyek pada database SQLite dengan kalkulasi persentase kemajuan progres otomatis."
+  },
+  "src/lib/services/task.service.ts": {
+    "summary": "Layanan CRUD tugas Kanban, pergeseran kolom status, dan operasi batch reorder urutan posisi tugas."
+  },
+  "src/lib/services/wiki.service.ts": {
+    "summary": "Layanan CRUD artikel Knowledge Base, pengelolaan kategori wiki, pembuatan slug unik, dan pencarian teks penuh."
+  },
+  "src/lib/utils.ts": {
+    "summary": "Fungsi utilitas pembantu untuk penggabungan class styling CSS Tailwind menggunakan clsx dan tailwind-merge."
+  },
+  "src/types/global.d.ts": {
+    "summary": "Deklarasi tipe TypeScript global untuk API peramban eksperimental seperti EyeDropper API."
+  },
+  "tailwind.config.ts": {
+    "summary": "Konfigurasi desain Tailwind CSS mencakup skema palet warna khusus, layout grid, dan plugin typography."
+  },
+  "tsconfig.json": {
+    "summary": "Konfigurasi kompilator TypeScript proyek dengan path alias '@/*' untuk impor modul yang bersih."
+  },
+  "tsconfig.tsbuildinfo": {
+    "summary": "Berkas cache metadata kompilasi inkremental TypeScript untuk mempercepat proses type check dan build."
+  }
+}
