@@ -429,8 +429,6 @@ export default function AppPortalPage() {
           return a.status.localeCompare(b.status) || a.name.localeCompare(b.name, "id");
         case "default":
         default:
-          if (a.isPinned && !b.isPinned) return -1;
-          if (!a.isPinned && b.isPinned) return 1;
           return a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "id");
       }
     });
