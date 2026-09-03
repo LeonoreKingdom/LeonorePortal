@@ -38,7 +38,7 @@ const DEFAULT_CATEGORIES: PortalCategory[] = [
   { id: "cat-design", name: "Design", color: "#a855f7", sortOrder: 6 },
 ];
 
-const SUGGESTED_SEARCHES = ["Portfolio", "Next.js", "Supabase", "Astro", "React", "Tools"];
+const SUGGESTED_SEARCHES = ["Portfolio", "Next.js", "Supabase", "Astro", "React", "Development"];
 
 type SortOption = "default" | "name-asc" | "name-desc" | "category" | "status";
 
@@ -369,7 +369,7 @@ export default function AppPortalPage() {
                     setEditingApp({
                       name: "",
                       description: "",
-                      url: "/",
+                      url: "https://",
                       category: categories[0]?.name || "Portfolio",
                       icon: "Globe",
                       status: "active",
@@ -719,11 +719,11 @@ export default function AppPortalPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Tautan / URL:</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Tautan / URL Produksi:</label>
                   <input
-                    type="text"
+                    type="url"
                     required
-                    placeholder="https://... atau /toolbox/..."
+                    placeholder="https://... (cth: https://my-app.vercel.app)"
                     value={editingApp.url || ""}
                     onChange={(e) => setEditingApp({ ...editingApp, url: e.target.value })}
                     className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 font-mono text-slate-200 focus:outline-none focus:border-indigo-500"
