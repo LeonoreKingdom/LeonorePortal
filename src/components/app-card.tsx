@@ -17,7 +17,16 @@ import {
   Check, 
   Tag,
   Pencil,
-  Trash2
+  Trash2,
+  User,
+  Users,
+  Sparkles,
+  ShoppingBag,
+  Coffee,
+  Cpu,
+  CheckCircle2,
+  KeyRound,
+  Compass,
 } from "lucide-react";
 import { AppItem } from "@/data/mock-apps";
 import { cn } from "@/lib/utils";
@@ -32,9 +41,26 @@ const ICON_MAP: Record<string, any> = {
   RefreshCw,
   QrCode,
   Palette,
+  Globe,
+  User,
+  Users,
+  Sparkles,
+  ShoppingBag,
+  Coffee,
+  Cpu,
+  CheckCircle2,
+  KeyRound,
+  Compass,
 };
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string; border: string; glow: string; btn: string }> = {
+  Portfolio: {
+    bg: "bg-pink-500/10",
+    text: "text-pink-400",
+    border: "border-pink-500/30",
+    glow: "group-hover:border-pink-500/50 group-hover:shadow-pink-500/10",
+    btn: "bg-pink-600 hover:bg-pink-500 text-white shadow-pink-500/20",
+  },
   Productivity: {
     bg: "bg-indigo-500/10",
     text: "text-indigo-400",

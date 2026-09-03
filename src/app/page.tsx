@@ -265,6 +265,10 @@ export default function AppPortalPage() {
   };
 
   // Filter & Deterministically Sort apps
+  const pinnedApps = useMemo(() => {
+    return apps.filter((a) => a.isPinned);
+  }, [apps]);
+
   const filteredAndSortedApps = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
 
@@ -608,34 +612,68 @@ export default function AppPortalPage() {
             </button>
           </div>
         ) : (
-          /* UNIFIED APPS LISTING: ALL APPS SHOWN TOGETHER */
-          <div className="mt-6 sm:mt-8 space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-indigo-400" />
-                <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-400">
-                  {selectedCategory === "Semua" && !searchQuery && !selectedTag && sortBy === "default"
-                    ? `Semua Aplikasi (${filteredAndSortedApps.length})`
-                    : `Hasil Pencarian (${filteredAndSortedApps.length})`}
-                </h2>
+          <div className="mt-6 sm:mt-8 space-y-10">
+            {/* 1. PINNED APPS SECTION (Shown on default view) */}
+            {selectedCategory === "Semua" && !searchQuery && !selectedTag && sortBy === "default" && pinnedApps.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3.5">
+                  <span className="h-2 w-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/80"></span>
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span>Aplikasi Utama & Favorit</span>
+                    <span className="text-slate-500 font-mono text-[11px]">({pinnedApps.length})</span>
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                  {pinnedApps.map((app) => (
+                    <AppCard
+                      key={app.id}
+                      app={app}
+                      highlightQuery={searchQuery}
+                      onSelectTag={handleSelectTag}
+                      isAdmin={isAdmin}
+                      onEdit={(a) => {
+                        setEditingApp(a);
+                        setIsAppModalOpen(true);
+                      }}
+                      onDelete={(a) => setDeleteTargetApp(a)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {filteredAndSortedApps.map((app) => (
-                <AppCard
-                  key={app.id}
-                  app={app}
-                  highlightQuery={searchQuery}
-                  onSelectTag={handleSelectTag}
-                  isAdmin={isAdmin}
-                  onEdit={(a) => {
-                    setEditingApp(a);
-                    setIsAppModalOpen(true);
-                  }}
-                  onDelete={(a) => setDeleteTargetApp(a)}
-                />
-              ))}
+            {/* 2. ALL APPS / FILTERED SECTION */}
+            <div>
+              <div className="flex items-center justify-between mb-3.5">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-indigo-400" />
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span>
+                      {selectedCategory === "Semua" && !searchQuery && !selectedTag && sortBy === "default"
+                        ? "Semua Aplikasi"
+                        : "Hasil Pencarian"}
+                    </span>
+                    <span className="text-slate-500 font-mono text-[11px]">({filteredAndSortedApps.length})</span>
+                  </h2>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {filteredAndSortedApps.map((app) => (
+                  <AppCard
+                    key={app.id}
+                    app={app}
+                    highlightQuery={searchQuery}
+                    onSelectTag={handleSelectTag}
+                    isAdmin={isAdmin}
+                    onEdit={(a) => {
+                      setEditingApp(a);
+                      setIsAppModalOpen(true);
+                    }}
+                    onDelete={(a) => setDeleteTargetApp(a)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}
