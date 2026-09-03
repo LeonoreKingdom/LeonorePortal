@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Lock, Sparkles, KeyRound, AlertCircle, ArrowRight, ShieldCheck, User } from "lucide-react";
@@ -193,12 +193,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
-
-          <div className="mt-6 pt-5 border-t border-slate-800/80 text-center">
-            <div className="text-[11px] text-slate-500">
-              Akses Master: <code className="text-indigo-400 font-mono">leonorexyz</code>
-            </div>
-          </div>
         </div>
       </div>
     );
