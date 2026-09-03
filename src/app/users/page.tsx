@@ -14,7 +14,9 @@ import {
   AlertCircle,
   RefreshCw,
   Search,
-  ShieldAlert
+  ShieldAlert,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { UserProfile, UserRole } from "@/lib/services/user.service";
@@ -36,6 +38,10 @@ export default function UserManagementPage() {
   const [formDisplayName, setFormDisplayName] = useState<string>("");
   const [formRole, setFormRole] = useState<UserRole>("member");
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+  // Password visibility states
+  const [showAddPassword, setShowAddPassword] = useState<boolean>(false);
+  const [showEditPassword, setShowEditPassword] = useState<boolean>(false);
 
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -155,12 +161,18 @@ export default function UserManagementPage() {
     }
   };
 
+  const openAddModal = () => {
+    resetForm();
+    setIsAddModalOpen(true);
+  };
+
   const openEditModal = (target: UserProfile) => {
     setEditingUserId(target.id);
     setFormUsername(target.username);
     setFormDisplayName(target.displayName);
     setFormRole(target.role);
     setFormPassword("");
+    setShowEditPassword(false);
     setIsEditModalOpen(true);
   };
 
@@ -170,6 +182,8 @@ export default function UserManagementPage() {
     setFormDisplayName("");
     setFormRole("member");
     setEditingUserId(null);
+    setShowAddPassword(false);
+    setShowEditPassword(false);
   };
 
   // If not admin, restrict page
@@ -216,10 +230,7 @@ export default function UserManagementPage() {
         </div>
 
         <button
-          onClick={() => {
-            resetForm();
-            setIsAddModalOpen(true);
-          }}
+          onClick={openAddModal}
           className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-xs font-bold text-white shadow-xl shadow-indigo-600/25 transition-all"
         >
           <UserPlus className="h-4 w-4" />
@@ -391,29 +402,44 @@ export default function UserManagementPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateUser} className="space-y-3.5 text-xs">
+            <form onSubmit={handleCreateUser} className="space-y-3.5 text-xs" autoComplete="off">
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Username (Unik):</label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: operator1"
+                  placeholder="Masukkan username baru..."
                   value={formUsername}
                   onChange={(e) => setFormUsername(e.target.value)}
+                  autoComplete="off"
+                  name="new_user_login_name"
                   className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 font-mono text-slate-200 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Password:</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Masukkan password..."
-                  value={formPassword}
-                  onChange={(e) => setFormPassword(e.target.value)}
-                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500"
-                />
+                <div className="relative">
+                  <input
+                    type={showAddPassword ? "text" : "password"}
+                    required
+                    placeholder="Masukkan password baru..."
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    autoComplete="new-password"
+                    name="new_user_login_pass"
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 pr-10 text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPassword(!showAddPassword)}
+                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors"
+                    title={showAddPassword ? "Sembunyikan password" : "Lihat password"}
+                    tabIndex={-1}
+                  >
+                    {showAddPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -423,6 +449,8 @@ export default function UserManagementPage() {
                   placeholder="Contoh: Operator Konten"
                   value={formDisplayName}
                   onChange={(e) => setFormDisplayName(e.target.value)}
+                  autoComplete="off"
+                  name="new_user_display_name"
                   className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500"
                 />
               </div>
@@ -474,13 +502,14 @@ export default function UserManagementPage() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateUser} className="space-y-3.5 text-xs">
+            <form onSubmit={handleUpdateUser} className="space-y-3.5 text-xs" autoComplete="off">
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Nama Tampilan:</label>
                 <input
                   type="text"
                   value={formDisplayName}
                   onChange={(e) => setFormDisplayName(e.target.value)}
+                  autoComplete="off"
                   className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-slate-200"
                 />
               </div>
@@ -501,13 +530,25 @@ export default function UserManagementPage() {
                 <label className="block text-slate-300 font-semibold mb-1">
                   Ganti Password (Kosongkan jika tidak ingin mengubah):
                 </label>
-                <input
-                  type="password"
-                  placeholder="Masukkan password baru..."
-                  value={formPassword}
-                  onChange={(e) => setFormPassword(e.target.value)}
-                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-slate-200"
-                />
+                <div className="relative">
+                  <input
+                    type={showEditPassword ? "text" : "password"}
+                    placeholder="Masukkan password baru..."
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    autoComplete="new-password"
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 pr-10 text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors"
+                    title={showEditPassword ? "Sembunyikan password" : "Lihat password"}
+                    tabIndex={-1}
+                  >
+                    {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-800 flex justify-end gap-2">
