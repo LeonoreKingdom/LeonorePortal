@@ -286,6 +286,12 @@ export default function AppPortalPage() {
 
   // Toggle Favorite / Pin directly from card
   const handleToggleFavorite = async (app: AppItem) => {
+    if (!isAdmin) {
+      setFeedback({ type: "error", text: "Hanya admin yang dapat mengubah status favorit aplikasi." });
+      setTimeout(() => setFeedback(null), 3000);
+      return;
+    }
+
     const newPinned = !app.isPinned;
     // Optimistic state update
     setApps((prev) =>
@@ -321,14 +327,16 @@ export default function AppPortalPage() {
     }
   };
 
-  // Drag and Drop reordering handlers
+  // Drag and Drop reordering handlers (Admin Only)
   const handleDragStart = (e: React.DragEvent, id: string) => {
+    if (!isAdmin) return;
     setDraggedAppId(id);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", id);
   };
 
   const handleDragOver = (e: React.DragEvent, id: string) => {
+    if (!isAdmin) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (dragOverAppId !== id) {
@@ -345,7 +353,7 @@ export default function AppPortalPage() {
   const handleDrop = async (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
     setDragOverAppId(null);
-    if (!draggedAppId || draggedAppId === targetId) {
+    if (!isAdmin || !draggedAppId || draggedAppId === targetId) {
       setDraggedAppId(null);
       return;
     }
@@ -396,7 +404,7 @@ export default function AppPortalPage() {
     return apps.filter((a) => a.isPinned);
   }, [apps]);
 
-  const canDrag = selectedCategory === "Semua" && !searchQuery && !selectedTag && sortBy === "default";
+  const canDrag = Boolean(isAdmin) && selectedCategory === "Semua" && !searchQuery && !selectedTag && sortBy === "default";
 
   const filteredAndSortedApps = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
