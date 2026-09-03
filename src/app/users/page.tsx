@@ -218,7 +218,7 @@ export default function UserManagementPage() {
           </div>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
-              <span>Manajemen Pengguna & Peran</span>
+              <span>User Management</span>
               <span className="rounded-md bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 text-[10px] text-indigo-300 font-mono">
                 {users.length} User
               </span>

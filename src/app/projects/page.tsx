@@ -141,10 +141,10 @@ export default function ProjectsPage() {
               Manajemen Proyek & Kanban
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white">
-              Proyek Saya
+              Projects
             </h1>
             <p className="mt-2 text-xs sm:text-sm md:text-base text-slate-400 max-w-2xl leading-relaxed">
-              Kelola tugas, alur kerja Kanban, dan catatan Markdown terintegrasi untuk seluruh inisiatif proyek Anda.
+              Tempat untuk mengelola manajemen proyek.
             </p>
           </div>
 

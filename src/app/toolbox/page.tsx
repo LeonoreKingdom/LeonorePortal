@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { 
@@ -50,10 +50,10 @@ export default function ToolboxPage() {
               100% Client-Side • Data Privat Tidak Keluar Perangkat
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
-              Toolbox Utilitas Mandiri
+              Toolbox
             </h1>
             <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-2xl leading-relaxed">
-              Koleksi alat kalkulasi, pengolahan media, dan utilitas pemrograman siap pakai yang diproses secara instan di browser Anda tanpa server eksternal.
+              Super Tools for Productivity.
             </p>
           </div>
 

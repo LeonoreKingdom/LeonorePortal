@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { 
@@ -47,8 +47,18 @@ export function WikiPageCard({ page, category, searchQuery, onSelectTag }: WikiP
 
   const plainContent = page.contentMarkdown.replace(/[#*`_>\[\]]/g, "").slice(0, 140);
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button, a")) {
+      return;
+    }
+    window.location.href = `/knowledge-base/${page.slug}`;
+  };
+
   return (
-    <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-sky-500/50 hover:bg-slate-900/90 hover:shadow-xl hover:shadow-sky-500/10">
+    <div 
+      onClick={handleCardClick}
+      className="group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-sky-500/50 hover:bg-slate-900/90 hover:shadow-xl hover:shadow-sky-500/10 cursor-pointer select-none"
+    >
       <div>
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
@@ -88,7 +98,10 @@ export function WikiPageCard({ page, category, searchQuery, onSelectTag }: WikiP
               <button
                 key={tag}
                 type="button"
-                onClick={() => onSelectTag?.(tag)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectTag?.(tag);
+                }}
                 className="inline-flex items-center gap-1 rounded-md bg-slate-950 px-2 py-0.5 text-[10px] font-mono text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200 transition-colors"
               >
                 <Tag className="h-2.5 w-2.5 opacity-60" />

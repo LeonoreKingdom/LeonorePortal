@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { 
@@ -40,8 +40,18 @@ export function ProjectCard({
     year: "numeric",
   });
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button, a")) {
+      return;
+    }
+    window.location.href = `/projects/${project.id}`;
+  };
+
   return (
-    <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/50 hover:bg-slate-900/90 hover:shadow-xl hover:shadow-indigo-500/10">
+    <div 
+      onClick={handleCardClick}
+      className="group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/50 hover:bg-slate-900/90 hover:shadow-xl hover:shadow-indigo-500/10 cursor-pointer select-none"
+    >
       <div>
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
@@ -63,7 +73,10 @@ export function ProjectCard({
             {onEditProject && (
               <button
                 type="button"
-                onClick={() => onEditProject(project)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditProject(project);
+                }}
                 title="Ubah Proyek"
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-indigo-300 transition-colors"
               >
@@ -73,7 +86,10 @@ export function ProjectCard({
             {onDeleteProject && (
               <button
                 type="button"
-                onClick={() => onDeleteProject(project.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteProject(project.id);
+                }}
                 title="Hapus Proyek"
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-950/50 hover:text-rose-400 transition-colors"
               >
@@ -160,7 +176,10 @@ export function ProjectCard({
           {project.notesMarkdown && onOpenNotes && (
             <button
               type="button"
-              onClick={() => onOpenNotes(project)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenNotes(project);
+              }}
               title="Lihat Catatan Markdown"
               className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors border border-transparent hover:border-slate-700"
             >

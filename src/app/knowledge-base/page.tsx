@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -142,7 +142,7 @@ export default function KnowledgeBasePage() {
               Knowledge Base
             </h1>
             <p className="mt-2 text-xs sm:text-sm md:text-base text-slate-400 max-w-2xl leading-relaxed">
-              Pusat pengetahuan dan catatan wiki terstruktur dengan tautan internal, format Markdown, dan sinkronisasi Obsidian.
+              Second Brain &amp; Wiki
             </p>
           </div>
 
