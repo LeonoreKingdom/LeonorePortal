@@ -55,53 +55,24 @@ const ICON_MAP: Record<string, any> = {
   Compass,
 };
 
-const CATEGORY_STYLES: Record<string, { bg: string; text: string; border: string; glow: string; btn: string }> = {
-  Portfolio: {
-    bg: "bg-pink-500/10",
-    text: "text-pink-400",
-    border: "border-pink-500/30",
-    glow: "group-hover:border-pink-500/50 group-hover:shadow-pink-500/10",
-    btn: "bg-pink-600 hover:bg-pink-500 text-white shadow-pink-500/20",
-  },
-  Productivity: {
-    bg: "bg-indigo-500/10",
-    text: "text-indigo-400",
-    border: "border-indigo-500/30",
-    glow: "group-hover:border-indigo-500/50 group-hover:shadow-indigo-500/10",
-    btn: "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20",
-  },
-  Utilities: {
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-400",
-    border: "border-emerald-500/30",
-    glow: "group-hover:border-emerald-500/50 group-hover:shadow-emerald-500/10",
-    btn: "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20",
-  },
-  Media: {
-    bg: "bg-sky-500/10",
-    text: "text-sky-400",
-    border: "border-sky-500/30",
-    glow: "group-hover:border-sky-500/50 group-hover:shadow-sky-500/10",
-    btn: "bg-sky-600 hover:bg-sky-500 text-white shadow-sky-500/20",
-  },
-  Development: {
-    bg: "bg-amber-500/10",
-    text: "text-amber-400",
-    border: "border-amber-500/30",
-    glow: "group-hover:border-amber-500/50 group-hover:shadow-amber-500/10",
-    btn: "bg-amber-600 hover:bg-amber-500 text-white shadow-amber-500/20",
-  },
-  Design: {
-    bg: "bg-purple-500/10",
-    text: "text-purple-400",
-    border: "border-purple-500/30",
-    glow: "group-hover:border-purple-500/50 group-hover:shadow-purple-500/10",
-    btn: "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-500/20",
-  },
+const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
+  Portfolio: "#ec4899",
+  Portal: "#70db86",
+  Store: "#edb007",
+  Agency: "#e70d2e",
+  Utilities: "#f59e0b",
+  Bots: "#808080",
+  Community: "#ffbc05",
+  Romansa: "#f264e1",
+  Productivity: "#6366f1",
+  Development: "#f59e0b",
+  Media: "#0ea5e9",
+  Design: "#a855f7",
 };
 
 interface AppCardProps {
   app: AppItem;
+  categoryColor?: string;
   highlightQuery?: string;
   onSelectTag?: (tag: string) => void;
   isAdmin?: boolean;
@@ -144,6 +115,7 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
 
 export function AppCard({
   app,
+  categoryColor,
   highlightQuery,
   onSelectTag,
   isAdmin,
@@ -161,9 +133,14 @@ export function AppCard({
   onDragEnd,
 }: AppCardProps) {
   const [copied, setCopied] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const IconComponent = ICON_MAP[app.icon] || Globe;
   const isInternal = app.url.startsWith("/");
-  const catStyle = CATEGORY_STYLES[app.category] || CATEGORY_STYLES.Productivity;
+  const catColor =
+    categoryColor ||
+    DEFAULT_CATEGORY_COLORS[app.category] ||
+    DEFAULT_CATEGORY_COLORS[app.category.toLowerCase()] ||
+    "#6366f1";
 
   const targetHref = isInternal ? app.url : app.url;
 
@@ -198,9 +175,14 @@ export function AppCard({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
       onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        borderColor: isDragOver ? undefined : isHovered ? `${catColor}60` : undefined,
+        boxShadow: isDragOver ? undefined : isHovered ? `0 10px 25px -5px ${catColor}20` : undefined,
+      }}
       className={cn(
-        "group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/90 hover:shadow-xl hover:border-indigo-500/40 hover:shadow-indigo-500/10 cursor-pointer select-none",
-        catStyle.glow,
+        "group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/90 cursor-pointer select-none",
         isDragging && "opacity-40 scale-95 border-dashed border-indigo-400 bg-indigo-950/30 shadow-2xl",
         isDragOver && "ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-950 border-indigo-400 scale-[1.02] bg-slate-850"
       )}
@@ -219,12 +201,12 @@ export function AppCard({
               </div>
             )}
             <div
-              className={cn(
-                "flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110 shadow-sm shrink-0",
-                catStyle.bg,
-                catStyle.text,
-                catStyle.border
-              )}
+              className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110 shadow-sm shrink-0"
+              style={{
+                backgroundColor: `${catColor}15`,
+                borderColor: `${catColor}35`,
+                color: catColor,
+              }}
             >
               <IconComponent className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
@@ -262,12 +244,12 @@ export function AppCard({
             )}
 
             <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] sm:text-[11px] font-medium border",
-                catStyle.bg,
-                catStyle.text,
-                catStyle.border
-              )}
+              className="rounded-full px-2.5 py-0.5 text-[10px] sm:text-[11px] font-semibold border transition-colors shrink-0"
+              style={{
+                backgroundColor: `${catColor}18`,
+                borderColor: `${catColor}40`,
+                color: catColor,
+              }}
             >
               {app.category}
             </span>
@@ -276,7 +258,12 @@ export function AppCard({
 
         {/* Content: Title & Description */}
         <div className="mt-3.5 sm:mt-4">
-          <h3 className="text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-indigo-300 transition-colors break-words">
+          <h3 
+            className="text-base sm:text-lg font-bold tracking-tight text-white transition-colors break-words"
+            style={{
+              color: isHovered ? catColor : undefined,
+            }}
+          >
             <HighlightText text={app.name} query={highlightQuery} />
           </h3>
           <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-slate-400 line-clamp-2 leading-relaxed break-words">
@@ -371,10 +358,11 @@ export function AppCard({
             rel="noopener noreferrer"
             title={`Buka ${app.name} di tab baru`}
             aria-label={`Buka ${app.name} di tab baru`}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-xl px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold shadow-md transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-500/50",
-              catStyle.btn
-            )}
+            style={{
+              backgroundColor: catColor,
+              boxShadow: `0 4px 14px ${catColor}35`,
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold text-white transition-all hover:brightness-110 active:scale-95 focus:outline-none"
           >
             <span>Buka</span>
             <ExternalLink className="h-3.5 w-3.5" />

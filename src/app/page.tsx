@@ -471,6 +471,30 @@ export default function AppPortalPage() {
     return ["Semua", ...categories.map((c) => c.name)];
   }, [categories]);
 
+  const categoryColorMap = useMemo(() => {
+    const map: Record<string, string> = {
+      Portfolio: "#ec4899",
+      Portal: "#70db86",
+      Store: "#edb007",
+      Agency: "#e70d2e",
+      Utilities: "#f59e0b",
+      Bots: "#808080",
+      Community: "#ffbc05",
+      Romansa: "#f264e1",
+      Productivity: "#6366f1",
+      Development: "#f59e0b",
+      Media: "#0ea5e9",
+      Design: "#a855f7",
+    };
+    categories.forEach((c) => {
+      if (c.name && c.color) {
+        map[c.name] = c.color;
+        map[c.name.toLowerCase()] = c.color;
+      }
+    });
+    return map;
+  }, [categories]);
+
   return (
     <div className="relative isolate min-h-screen pb-20">
       {/* Ambient background decoration */}
@@ -607,19 +631,35 @@ export default function AppPortalPage() {
 
           {/* Dynamic Category Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none self-start w-full lg:w-auto">
-            {categoryTabList.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                  selectedCategory === cat
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
-                    : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800/80"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+            {categoryTabList.map((cat) => {
+              const catObj = categories.find((c) => c.name.toLowerCase() === cat.toLowerCase());
+              const catColor = catObj?.color || (cat !== "Semua" ? categoryColorMap[cat] : undefined);
+              const isSelected = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  style={
+                    isSelected && catColor
+                      ? { backgroundColor: catColor, borderColor: catColor, color: "#ffffff", boxShadow: `0 4px 12px ${catColor}40` }
+                      : undefined
+                  }
+                  className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    isSelected
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
+                      : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800/80"
+                  }`}
+                >
+                  {catColor && (
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0"
+                      style={{ backgroundColor: catColor }}
+                    />
+                  )}
+                  <span>{cat}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -763,6 +803,7 @@ export default function AppPortalPage() {
                     <AppCard
                       key={app.id}
                       app={app}
+                      categoryColor={categoryColorMap[app.category] || categoryColorMap[app.category.toLowerCase()]}
                       highlightQuery={searchQuery}
                       onSelectTag={handleSelectTag}
                       isAdmin={isAdmin}
@@ -806,6 +847,7 @@ export default function AppPortalPage() {
                   <AppCard
                     key={app.id}
                     app={app}
+                    categoryColor={categoryColorMap[app.category] || categoryColorMap[app.category.toLowerCase()]}
                     highlightQuery={searchQuery}
                     onSelectTag={handleSelectTag}
                     isAdmin={isAdmin}
