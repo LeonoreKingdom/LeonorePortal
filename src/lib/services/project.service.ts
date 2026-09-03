@@ -1,6 +1,19 @@
-﻿import { ensureDbInitialized } from "@/lib/db";
+import { ensureDbInitialized } from "@/lib/db";
 import { ProjectItem } from "@/data/mock-projects";
 import { TaskService } from "@/lib/services/task.service";
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Portal: "#70db86",
+  Store: "#edb007",
+  Agency: "#e70d2e",
+  Utilities: "#f59e0b",
+  Bots: "#808080",
+  Community: "#ffbc05",
+  Romansa: "#f264e1",
+  Portfolio: "#ec4899",
+  Productivity: "#6366f1",
+  Development: "#0ea5e9",
+};
 
 export class ProjectService {
   static async getAllProjects(): Promise<ProjectItem[]> {
@@ -11,14 +24,15 @@ export class ProjectService {
     for (const r of rows.rows) {
       const pId = String(r.id);
       const tasks = await TaskService.getTasksByProjectId(pId);
+      const category = String(r.category || "Development");
 
       projects.push({
         id: pId,
         title: String(r.title),
         description: String(r.description || ""),
         notesMarkdown: String(r.notes || ""),
-        category: String(r.category || "Development"),
-        color: "#6366f1",
+        category,
+        color: CATEGORY_COLORS[category] || "#6366f1",
         status: (r.status as any) || "active",
         tasks,
         createdAt: String(r.created_at),
@@ -39,14 +53,15 @@ export class ProjectService {
     if (!r) return null;
 
     const tasks = await TaskService.getTasksByProjectId(id);
+    const category = String(r.category || "Development");
 
     return {
       id: String(r.id),
       title: String(r.title),
       description: String(r.description || ""),
       notesMarkdown: String(r.notes || ""),
-      category: String(r.category || "Development"),
-      color: "#6366f1",
+      category,
+      color: CATEGORY_COLORS[category] || "#6366f1",
       status: (r.status as any) || "active",
       tasks,
       createdAt: String(r.created_at),
