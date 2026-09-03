@@ -14,7 +14,9 @@ import {
   AlertCircle,
   Settings,
   Pencil,
-  Check
+  Check,
+  GripVertical,
+  Star
 } from "lucide-react";
 import { AppItem } from "@/data/mock-apps";
 import { AppCard } from "@/components/app-card";
@@ -56,6 +58,8 @@ export default function AppPortalPage() {
 
   // Admin App Editing States
   const [editingApp, setEditingApp] = useState<Partial<AppItem> | null>(null);
+  const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
+  const [dragOverAppId, setDragOverAppId] = useState<string | null>(null);
   const [isAppModalOpen, setIsAppModalOpen] = useState<boolean>(false);
   const [deleteTargetApp, setDeleteTargetApp] = useState<AppItem | null>(null);
   const [customTagInput, setCustomTagInput] = useState<string>("");
@@ -264,10 +268,119 @@ export default function AppPortalPage() {
     setCustomTagInput("");
   };
 
+  // Toggle Favorite / Pin directly from card
+  const handleToggleFavorite = async (app: AppItem) => {
+    const newPinned = !app.isPinned;
+    // Optimistic state update
+    setApps((prev) =>
+      prev.map((a) => (a.id === app.id ? { ...a, isPinned: newPinned } : a))
+    );
+
+    try {
+      const res = await fetch(`/api/apps/${app.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPinned: newPinned }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        // Revert on failure
+        setApps((prev) =>
+          prev.map((a) => (a.id === app.id ? { ...a, isPinned: app.isPinned } : a))
+        );
+        setFeedback({ type: "error", text: "Gagal memperbarui status favorit." });
+      } else {
+        setFeedback({
+          type: "success",
+          text: newPinned
+            ? `"${app.name}" ditambahkan ke Favorit.`
+            : `"${app.name}" dihapus dari Favorit.`,
+        });
+        setTimeout(() => setFeedback(null), 3000);
+      }
+    } catch (err) {
+      setApps((prev) =>
+        prev.map((a) => (a.id === app.id ? { ...a, isPinned: app.isPinned } : a))
+      );
+    }
+  };
+
+  // Drag and Drop reordering handlers
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedAppId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverAppId !== id) {
+      setDragOverAppId(id);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent, id: string) => {
+    if (dragOverAppId === id) {
+      setDragOverAppId(null);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    setDragOverAppId(null);
+    if (!draggedAppId || draggedAppId === targetId) {
+      setDraggedAppId(null);
+      return;
+    }
+
+    const currentApps = [...apps];
+    const fromIndex = currentApps.findIndex((a) => a.id === draggedAppId);
+    const toIndex = currentApps.findIndex((a) => a.id === targetId);
+
+    if (fromIndex === -1 || toIndex === -1) {
+      setDraggedAppId(null);
+      return;
+    }
+
+    const [moved] = currentApps.splice(fromIndex, 1);
+    currentApps.splice(toIndex, 0, moved);
+
+    const reordered = currentApps.map((a, idx) => ({
+      ...a,
+      sortOrder: idx + 1,
+    }));
+
+    setApps(reordered);
+    setDraggedAppId(null);
+
+    try {
+      const payload = reordered.map((a) => ({ id: a.id, sortOrder: a.sortOrder }));
+      const res = await fetch("/api/apps/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apps: payload }),
+      });
+      if (res.ok) {
+        setFeedback({ type: "success", text: "Urutan aplikasi berhasil diperbarui." });
+        setTimeout(() => setFeedback(null), 3000);
+      }
+    } catch (err) {
+      console.error("Failed to reorder apps:", err);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedAppId(null);
+    setDragOverAppId(null);
+  };
+
   // Filter & Deterministically Sort apps
   const pinnedApps = useMemo(() => {
     return apps.filter((a) => a.isPinned);
   }, [apps]);
+
+  const canDrag = selectedCategory === "Semua" && !searchQuery && !selectedTag && sortBy === "default";
 
   const filteredAndSortedApps = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -636,6 +749,7 @@ export default function AppPortalPage() {
                         setIsAppModalOpen(true);
                       }}
                       onDelete={(a) => setDeleteTargetApp(a)}
+                      onToggleFavorite={handleToggleFavorite}
                     />
                   ))}
                 </div>
@@ -656,6 +770,13 @@ export default function AppPortalPage() {
                     <span className="text-slate-500 font-mono text-[11px]">({filteredAndSortedApps.length})</span>
                   </h2>
                 </div>
+                {canDrag && (
+                  <div className="flex items-center gap-1 text-[11px] text-slate-400 bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded-full shadow-sm">
+                    <GripVertical className="h-3 w-3 text-indigo-400" />
+                    <span className="hidden sm:inline">Drag card untuk ubah urutan</span>
+                    <span className="sm:hidden">Drag urutan</span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -671,6 +792,16 @@ export default function AppPortalPage() {
                       setIsAppModalOpen(true);
                     }}
                     onDelete={(a) => setDeleteTargetApp(a)}
+                    onToggleFavorite={handleToggleFavorite}
+                    isDraggable={canDrag}
+                    isDragging={draggedAppId === app.id}
+                    isDragOver={dragOverAppId === app.id}
+                    onDragStart={(e) => handleDragStart(e, app.id)}
+                    onDragOver={(e) => handleDragOver(e, app.id)}
+                    onDragEnter={(e) => handleDragOver(e, app.id)}
+                    onDragLeave={(e) => handleDragLeave(e, app.id)}
+                    onDrop={(e) => handleDrop(e, app.id)}
+                    onDragEnd={handleDragEnd}
                   />
                 ))}
               </div>

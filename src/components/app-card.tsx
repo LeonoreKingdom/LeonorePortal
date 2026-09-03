@@ -27,6 +27,8 @@ import {
   CheckCircle2,
   KeyRound,
   Compass,
+  Star,
+  GripVertical,
 } from "lucide-react";
 import { AppItem } from "@/data/mock-apps";
 import { cn } from "@/lib/utils";
@@ -105,6 +107,16 @@ interface AppCardProps {
   isAdmin?: boolean;
   onEdit?: (app: AppItem) => void;
   onDelete?: (app: AppItem) => void;
+  onToggleFavorite?: (app: AppItem) => void;
+  isDraggable?: boolean;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragEnter?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
 }
 
 function HighlightText({ text, query }: { text: string; query?: string }) {
@@ -130,7 +142,24 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
   );
 }
 
-export function AppCard({ app, highlightQuery, onSelectTag, isAdmin, onEdit, onDelete }: AppCardProps) {
+export function AppCard({
+  app,
+  highlightQuery,
+  onSelectTag,
+  isAdmin,
+  onEdit,
+  onDelete,
+  onToggleFavorite,
+  isDraggable,
+  isDragging,
+  isDragOver,
+  onDragStart,
+  onDragOver,
+  onDragEnter,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+}: AppCardProps) {
   const [copied, setCopied] = useState(false);
   const IconComponent = ICON_MAP[app.icon] || Globe;
   const isInternal = app.url.startsWith("/");
@@ -161,33 +190,75 @@ export function AppCard({ app, highlightQuery, onSelectTag, isAdmin, onEdit, onD
 
   return (
     <div
+      draggable={isDraggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
       onClick={handleCardClick}
       className={cn(
-        "group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/90 hover:shadow-xl hover:border-indigo-500/40 hover:shadow-indigo-500/10 cursor-pointer",
-        catStyle.glow
+        "group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/90 hover:shadow-xl hover:border-indigo-500/40 hover:shadow-indigo-500/10 cursor-pointer select-none",
+        catStyle.glow,
+        isDragging && "opacity-40 scale-95 border-dashed border-indigo-400 bg-indigo-950/30 shadow-2xl",
+        isDragOver && "ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-950 border-indigo-400 scale-[1.02] bg-slate-850"
       )}
     >
       <div>
-        {/* Top bar: Icon & Category & Pin & Quick Actions */}
+        {/* Top bar: Icon, Drag Handle, Category & Favorite Toggle */}
         <div className="flex items-start justify-between gap-3">
-          <div
-            className={cn(
-              "flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110 shadow-sm shrink-0",
-              catStyle.bg,
-              catStyle.text,
-              catStyle.border
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {isDraggable && (
+              <div
+                className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-slate-500 hover:text-indigo-400 opacity-60 hover:opacity-100 transition-all rounded"
+                title="Tahan & geser kartu untuk mengubah urutan"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <GripVertical className="h-4 w-4" />
+              </div>
             )}
-          >
-            <IconComponent className="h-5 w-5 sm:h-6 sm:w-6" />
+            <div
+              className={cn(
+                "flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110 shadow-sm shrink-0",
+                catStyle.bg,
+                catStyle.text,
+                catStyle.border
+              )}
+            >
+              <IconComponent className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-1.5">
-            {app.isPinned && (
-              <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-amber-400 border border-amber-500/30">
-                <Pin className="h-3 w-3 fill-amber-400/20" />
-                Utama
+            {/* Interactive Star Favorite Toggle Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite?.(app);
+              }}
+              title={app.isPinned ? "Klik untuk menghapus dari Favorit" : "Klik untuk menandai sebagai Favorit"}
+              aria-label={app.isPinned ? "Hapus dari Favorit" : "Tandai sebagai Favorit"}
+              className={cn(
+                "group/star flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] sm:text-[11px] font-medium transition-all duration-200 border cursor-pointer",
+                app.isPinned
+                  ? "bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25 shadow-sm shadow-amber-500/20"
+                  : "bg-slate-800/80 text-slate-400 border-slate-700/60 hover:text-amber-300 hover:border-amber-500/40 hover:bg-slate-800"
+              )}
+            >
+              <Star
+                className={cn(
+                  "h-3.5 w-3.5 transition-transform duration-200 group-hover/star:scale-125",
+                  app.isPinned ? "fill-amber-400 text-amber-400" : "text-slate-400 group-hover/star:text-amber-400"
+                )}
+              />
+              <span className="font-semibold">
+                {app.isPinned ? "Favorit" : "Pin"}
               </span>
-            )}
+            </button>
+
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 text-[10px] sm:text-[11px] font-medium border",

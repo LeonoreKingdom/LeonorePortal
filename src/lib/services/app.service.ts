@@ -144,4 +144,21 @@ export class AppService {
     });
     return res.rowsAffected > 0;
   }
+
+  static async batchReorderApps(items: { id: string; sortOrder: number }[]): Promise<boolean> {
+    const db = await ensureDbInitialized();
+    for (const item of items) {
+      await db.execute({
+        sql: "UPDATE portal_apps SET sort_order = ? WHERE id = ?",
+        args: [item.sortOrder, item.id],
+      });
+    }
+    return true;
+  }
+
+  static async toggleFavorite(id: string): Promise<AppItem | null> {
+    const current = await this.getAppById(id);
+    if (!current) return null;
+    return this.updateApp(id, { isPinned: !current.isPinned });
+  }
 }
