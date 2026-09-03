@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { AppItem } from "@/data/mock-apps";
 import { cn } from "@/lib/utils";
+import { TechBadge } from "@/data/tech-stack";
 
 const ICON_MAP: Record<string, any> = {
   Wrench,
@@ -171,7 +172,7 @@ export function AppCard({ app, highlightQuery, onSelectTag, isAdmin, onEdit, onD
           </p>
         </div>
 
-        {/* Tags */}
+        {/* Tech Stack Tags */}
         {app.tags && app.tags.length > 0 && (
           <div className="mt-3 sm:mt-4 flex flex-wrap gap-1.5">
             {app.tags.map((tag) => (
@@ -179,10 +180,10 @@ export function AppCard({ app, highlightQuery, onSelectTag, isAdmin, onEdit, onD
                 key={tag}
                 type="button"
                 onClick={() => onSelectTag?.(tag)}
-                className="inline-flex items-center gap-1 rounded-md bg-slate-950 px-2 py-0.5 text-[10px] sm:text-[11px] font-mono text-slate-400 border border-slate-800/80 hover:border-slate-700 hover:text-slate-300 transition-colors"
+                className="hover:scale-105 transition-transform"
+                title={`Filter berdasarkan ${tag}`}
               >
-                <Tag className="h-2.5 w-2.5 opacity-60" />
-                <HighlightText text={tag} query={highlightQuery} />
+                <TechBadge name={tag} />
               </button>
             ))}
           </div>

@@ -176,6 +176,37 @@ export async function ensureDbInitialized(): Promise<Client> {
       });
     }
 
+    // Create portal_categories table
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS portal_categories (
+        id TEXT PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL,
+        color TEXT DEFAULT '#6366f1',
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+    `);
+
+    // Seed default categories if none
+    const catCheck = await db.execute("SELECT count(*) as count FROM portal_categories");
+    if (Number(catCheck.rows[0]?.count || 0) === 0) {
+      const defaultCats = [
+        { id: "cat-portfolio", name: "Portfolio", color: "#ec4899", order: 1 },
+        { id: "cat-dev", name: "Development", color: "#6366f1", order: 2 },
+        { id: "cat-prod", name: "Productivity", color: "#10b981", order: 3 },
+        { id: "cat-media", name: "Media", color: "#0ea5e9", order: 4 },
+        { id: "cat-util", name: "Utilities", color: "#f59e0b", order: 5 },
+        { id: "cat-design", name: "Design", color: "#a855f7", order: 6 },
+      ];
+      for (const c of defaultCats) {
+        await db.execute({
+          sql: `INSERT OR IGNORE INTO portal_categories (id, name, color, sort_order, created_at)
+                VALUES (?, ?, ?, ?, ?)`,
+          args: [c.id, c.name, c.color, c.order, new Date().toISOString()],
+        });
+      }
+    }
+
     // Check if seeded
     const projectRes = await db.execute("SELECT count(*) as count FROM projects");
     const count = Number(projectRes.rows[0]?.count || 0);

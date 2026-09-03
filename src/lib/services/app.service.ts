@@ -1,4 +1,4 @@
-﻿import { ensureDbInitialized } from "@/lib/db";
+import { ensureDbInitialized } from "@/lib/db";
 import { AppItem, MOCK_APPS } from "@/data/mock-apps";
 
 export class AppService {
@@ -7,7 +7,7 @@ export class AppService {
     const res = await db.execute("SELECT * FROM portal_apps ORDER BY sort_order ASC, created_at ASC");
 
     if (res.rows.length === 0) {
-      return MOCK_APPS;
+      return [];
     }
 
     return res.rows.map((r: any) => {
