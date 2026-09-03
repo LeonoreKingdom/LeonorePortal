@@ -1,4 +1,4 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import { ProjectService } from "@/lib/services/project.service";
 import { WikiService } from "@/lib/services/wiki.service";
@@ -149,28 +149,57 @@ export class ObsidianImportService {
         const fileName = path.basename(file, ".md");
         const relPath = path.relative(vaultPath, file);
 
+        const normalizedRel = relPath.replace(/\\/g, "/");
+
         const isProject =
-          metadata.type === "project" ||
-          relPath.startsWith("Projects") ||
-          relPath.toLowerCase().includes("project");
+          normalizedRel.startsWith("1_Projects/") ||
+          metadata.type === "project";
+
+        const isResource =
+          normalizedRel.startsWith("3_Resources/") ||
+          metadata.type === "resource" ||
+          metadata.type === "wiki";
+
+        // Ignore 00_Inbox, 2_Areas, 4_Archives, root files, .obsidian, etc.
+        if (!isProject && !isResource) {
+          continue;
+        }
 
         if (isProject) {
           const title = metadata.title || fileName;
-          const project = await ProjectService.createProject({
-            title,
-            description: metadata.description || `Diimpor dari Vault: ${relPath}`,
-            notesMarkdown: body,
-            category: metadata.category || "Development",
-            status: metadata.status || "active",
-          });
+          const allProjects = await ProjectService.getAllProjects();
+          const existingProject = allProjects.find(
+            (p) => p.title.toLowerCase() === title.toLowerCase()
+          );
 
-          const tasks = this.extractTasksFromProjectMarkdown(body, project.id);
-          for (const t of tasks) {
-            await TaskService.createTask(project.id, t);
+          let projectId = existingProject?.id;
+          if (existingProject) {
+            await ProjectService.updateProject(existingProject.id, {
+              description: metadata.description || existingProject.description,
+              notesMarkdown: body,
+              category: metadata.category || existingProject.category,
+              status: metadata.status || existingProject.status,
+            });
+          } else {
+            const newProj = await ProjectService.createProject({
+              title,
+              description: metadata.description || `Diimpor dari Vault: ${relPath}`,
+              notesMarkdown: body,
+              category: metadata.category || "Development",
+              status: metadata.status || "active",
+            });
+            projectId = newProj.id;
+          }
+
+          if (projectId) {
+            const tasks = this.extractTasksFromProjectMarkdown(body, projectId);
+            for (const t of tasks) {
+              await TaskService.createTask(projectId, t);
+            }
           }
 
           projectsCount++;
-        } else {
+        } else if (isResource) {
           const title = metadata.title || fileName;
           const categoryName = metadata.category || path.basename(path.dirname(file)) || "General";
           
@@ -180,17 +209,29 @@ export class ObsidianImportService {
           const found = categories.find((c) => c.name.toLowerCase() === categoryName.toLowerCase());
           if (found) {
             targetCategoryId = found.id;
-          } else if (categoryName !== "Wiki") {
+          } else if (categoryName !== "Wiki" && categoryName !== "3_Resources") {
             const createdCat = await WikiService.createCategory({ name: categoryName });
             targetCategoryId = createdCat.id;
           }
 
-          await WikiService.createArticle({
-            title,
-            categoryId: targetCategoryId,
-            contentMarkdown: body,
-            tags: Array.isArray(metadata.tags) ? metadata.tags : ["Imported", "Obsidian"],
-          });
+          const allArticles = await WikiService.getAllArticles();
+          const existingArticle = allArticles.find(
+            (a) => a.title.toLowerCase() === title.toLowerCase()
+          );
+
+          if (existingArticle) {
+            await WikiService.updateArticle(existingArticle.id, {
+              contentMarkdown: body,
+              tags: Array.isArray(metadata.tags) ? metadata.tags : existingArticle.tags,
+            });
+          } else {
+            await WikiService.createArticle({
+              title,
+              categoryId: targetCategoryId,
+              contentMarkdown: body,
+              tags: Array.isArray(metadata.tags) ? metadata.tags : ["Imported", "Obsidian"],
+            });
+          }
 
           wikiCount++;
         }

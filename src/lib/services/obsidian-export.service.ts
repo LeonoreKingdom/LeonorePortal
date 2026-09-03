@@ -1,4 +1,4 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import { ProjectService } from "@/lib/services/project.service";
 import { WikiService } from "@/lib/services/wiki.service";
@@ -19,14 +19,16 @@ export class ObsidianExportService {
     let md = "";
 
     if (includeFrontmatter) {
+      const createdDate = project.createdAt ? project.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10);
       md += `---
-title: "${project.title.replace(/"/g, '\\"')}"
-id: "${project.id}"
-type: "project"
-category: "${project.category}"
-status: "${project.status}"
-updated_at: "${project.updatedAt}"
-source: "LeonorePortal"
+type: project
+status: ${project.status || "active"}
+category: ${project.category || "Development"}
+priority: ${project.priority || "medium"}
+created: ${createdDate}
+tags:
+  - project
+  - ${(project.category || "development").toLowerCase().replace(/\s+/g, "-")}
 ---\n\n`;
     }
 
@@ -36,12 +38,8 @@ source: "LeonorePortal"
       md += `> ${project.description}\n\n`;
     }
 
-    if (project.notesMarkdown) {
-      md += `## Catatan & Ringkasan Proyek\n\n${project.notesMarkdown.trim()}\n\n`;
-    }
-
     if (project.tasks && project.tasks.length > 0) {
-      md += `## Papan Tugas (Kanban Tasks)\n\n`;
+      md += `## Papan Tugas (Kanban)\n\n`;
 
       const todoTasks = project.tasks.filter((t) => t.status === "todo");
       const doingTasks = project.tasks.filter((t) => t.status === "doing");
@@ -81,6 +79,10 @@ source: "LeonorePortal"
       }
     }
 
+    if (project.notesMarkdown) {
+      md += `## Catatan & Ringkasan Proyek\n\n${project.notesMarkdown.trim()}\n\n`;
+    }
+
     return md;
   }
 
@@ -92,14 +94,14 @@ source: "LeonorePortal"
     let md = "";
 
     if (includeFrontmatter) {
+      const createdDate = article.createdAt ? article.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10);
       md += `---
-title: "${article.title.replace(/"/g, '\\"')}"
-slug: "${article.slug}"
-type: "wiki"
-category: "${categoryName}"
-tags: [${article.tags.map((t) => `"${t}"`).join(", ")}]
-updated_at: "${article.updatedAt}"
-source: "LeonorePortal"
+type: resource
+category: ${categoryName}
+created: ${createdDate}
+tags:
+  - knowledge
+  - ${categoryName.toLowerCase().replace(/\s+/g, "-")}
 ---\n\n`;
     }
 
@@ -127,8 +129,8 @@ source: "LeonorePortal"
       };
     }
 
-    const projectsDir = path.join(vaultPath, "Projects");
-    const wikiDir = path.join(vaultPath, "Wiki");
+    const projectsDir = path.join(vaultPath, "1_Projects");
+    const wikiDir = path.join(vaultPath, "3_Resources");
 
     if (!fs.existsSync(projectsDir)) fs.mkdirSync(projectsDir, { recursive: true });
     if (!fs.existsSync(wikiDir)) fs.mkdirSync(wikiDir, { recursive: true });
@@ -143,7 +145,7 @@ source: "LeonorePortal"
         const content = this.formatProjectMarkdown(proj, config.includeFrontmatter);
         const fileName = `${proj.title.replace(/[\\/:*?"<>|]/g, "_").trim()}.md`;
         const filePath = path.join(projectsDir, fileName);
-        const relPath = path.join("Projects", fileName);
+        const relPath = path.join("1_Projects", fileName);
 
         fs.writeFileSync(filePath, content, "utf-8");
         exportedItems.push({
@@ -173,7 +175,7 @@ source: "LeonorePortal"
         const content = this.formatWikiMarkdown(art, catName, config.includeFrontmatter);
         const fileName = `${art.title.replace(/[\\/:*?"<>|]/g, "_").trim()}.md`;
         const filePath = path.join(catDir, fileName);
-        const relPath = path.join("Wiki", catName, fileName);
+        const relPath = path.join("3_Resources", catName, fileName);
 
         fs.writeFileSync(filePath, content, "utf-8");
         exportedItems.push({
