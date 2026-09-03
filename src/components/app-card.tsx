@@ -231,33 +231,35 @@ export function AppCard({
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-1.5">
-            {/* Interactive Star Favorite Toggle Button */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onToggleFavorite?.(app);
-              }}
-              title={app.isPinned ? "Klik untuk menghapus dari Favorit" : "Klik untuk menandai sebagai Favorit"}
-              aria-label={app.isPinned ? "Hapus dari Favorit" : "Tandai sebagai Favorit"}
-              className={cn(
-                "group/star flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] sm:text-[11px] font-medium transition-all duration-200 border cursor-pointer",
-                app.isPinned
-                  ? "bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25 shadow-sm shadow-amber-500/20"
-                  : "bg-slate-800/80 text-slate-400 border-slate-700/60 hover:text-amber-300 hover:border-amber-500/40 hover:bg-slate-800"
-              )}
-            >
-              <Star
+            {/* Interactive Star Favorite Toggle Button (Admin Only) */}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleFavorite?.(app);
+                }}
+                title={app.isPinned ? "Klik untuk menghapus dari Favorit" : "Klik untuk menandai sebagai Favorit"}
+                aria-label={app.isPinned ? "Hapus dari Favorit" : "Tandai sebagai Favorit"}
                 className={cn(
-                  "h-3.5 w-3.5 transition-transform duration-200 group-hover/star:scale-125",
-                  app.isPinned ? "fill-amber-400 text-amber-400" : "text-slate-400 group-hover/star:text-amber-400"
+                  "group/star flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] sm:text-[11px] font-medium transition-all duration-200 border cursor-pointer",
+                  app.isPinned
+                    ? "bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25 shadow-sm shadow-amber-500/20"
+                    : "bg-slate-800/80 text-slate-400 border-slate-700/60 hover:text-amber-300 hover:border-amber-500/40 hover:bg-slate-800"
                 )}
-              />
-              <span className="font-semibold">
-                {app.isPinned ? "Favorit" : "Pin"}
-              </span>
-            </button>
+              >
+                <Star
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-200 group-hover/star:scale-125",
+                    app.isPinned ? "fill-amber-400 text-amber-400" : "text-slate-400 group-hover/star:text-amber-400"
+                  )}
+                />
+                <span className="font-semibold">
+                  {app.isPinned ? "Favorit" : "Pin"}
+                </span>
+              </button>
+            )}
 
             <span
               className={cn(
