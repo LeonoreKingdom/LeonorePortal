@@ -121,10 +121,23 @@ export function AppCard({ app, highlightQuery, onSelectTag, isAdmin, onEdit, onD
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // If user clicked any interactive element (buttons, tags, copy, edit, delete), let it handle its own event
+    if ((e.target as HTMLElement).closest("button, a")) {
+      return;
+    }
+    if (isInternal) {
+      window.location.href = targetHref;
+    } else {
+      window.open(targetHref, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div
+      onClick={handleCardClick}
       className={cn(
-        "group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/90 hover:shadow-xl",
+        "group relative flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/90 hover:shadow-xl hover:border-indigo-500/40 hover:shadow-indigo-500/10 cursor-pointer",
         catStyle.glow
       )}
     >
@@ -179,7 +192,10 @@ export function AppCard({ app, highlightQuery, onSelectTag, isAdmin, onEdit, onD
               <button
                 key={tag}
                 type="button"
-                onClick={() => onSelectTag?.(tag)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectTag?.(tag);
+                }}
                 className="hover:scale-105 transition-transform"
                 title={`Filter berdasarkan ${tag}`}
               >
