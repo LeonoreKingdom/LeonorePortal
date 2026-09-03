@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,7 +21,7 @@ import { useAuth } from "@/components/auth-provider";
 
 const BASE_NAV_ITEMS = [
   { label: "App Portal", href: "/", icon: LayoutGrid },
-  { label: "Papan Proyek", href: "/projects", icon: KanbanSquare },
+  { label: "Projects", href: "/projects", icon: KanbanSquare },
   { label: "Knowledge Base", href: "/knowledge-base", icon: BookOpen },
   { label: "Toolbox", href: "/toolbox", icon: Wrench },
   { label: "Obsidian Sync", href: "/obsidian-sync", icon: FolderSync },
@@ -34,7 +34,7 @@ export function Navbar() {
 
   const navItems = [
     ...BASE_NAV_ITEMS,
-    ...(isAdmin ? [{ label: "Manajemen User", href: "/users", icon: Users }] : []),
+    ...(isAdmin ? [{ label: "User Management", href: "/users", icon: Users }] : []),
   ];
 
   return (
