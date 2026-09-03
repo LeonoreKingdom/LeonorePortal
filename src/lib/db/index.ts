@@ -1,4 +1,4 @@
-﻿import { createClient, Client } from "@libsql/client";
+import { createClient, Client } from "@libsql/client";
 import { MOCK_PROJECTS } from "@/data/mock-projects";
 import { MOCK_CATEGORIES, MOCK_WIKI_PAGES } from "@/data/mock-wiki";
 import { MOCK_APPS } from "@/data/mock-apps";
@@ -142,6 +142,39 @@ export async function ensureDbInitialized(): Promise<Client> {
         details TEXT
       );
     `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'member',
+        display_name TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `);
+
+    // Ensure default master admin exists
+    const userCheck = await db.execute({
+      sql: "SELECT count(*) as count FROM users WHERE username = ?",
+      args: ["leonorexyz"],
+    });
+    if (Number(userCheck.rows[0]?.count || 0) === 0) {
+      await db.execute({
+        sql: `INSERT INTO users (id, username, password, role, display_name, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          "usr-admin-default",
+          "leonorexyz",
+          "leonorekingdom",
+          "admin",
+          "Leonore Administrator",
+          new Date().toISOString(),
+          new Date().toISOString(),
+        ],
+      });
+    }
 
     // Check if seeded
     const projectRes = await db.execute("SELECT count(*) as count FROM projects");

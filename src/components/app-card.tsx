@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { 
@@ -15,7 +15,9 @@ import {
   Globe, 
   Copy, 
   Check, 
-  Tag 
+  Tag,
+  Pencil,
+  Trash2
 } from "lucide-react";
 import { AppItem } from "@/data/mock-apps";
 import { cn } from "@/lib/utils";
@@ -73,6 +75,9 @@ interface AppCardProps {
   app: AppItem;
   highlightQuery?: string;
   onSelectTag?: (tag: string) => void;
+  isAdmin?: boolean;
+  onEdit?: (app: AppItem) => void;
+  onDelete?: (app: AppItem) => void;
 }
 
 function HighlightText({ text, query }: { text: string; query?: string }) {
@@ -98,7 +103,7 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
   );
 }
 
-export function AppCard({ app, highlightQuery, onSelectTag }: AppCardProps) {
+export function AppCard({ app, highlightQuery, onSelectTag, isAdmin, onEdit, onDelete }: AppCardProps) {
   const [copied, setCopied] = useState(false);
   const IconComponent = ICON_MAP[app.icon] || Globe;
   const isInternal = app.url.startsWith("/");
@@ -203,6 +208,37 @@ export function AppCard({ app, highlightQuery, onSelectTag }: AppCardProps) {
         </div>
 
         <div className="flex items-center gap-1.5">
+          {isAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit?.(app);
+                }}
+                title="Sunting aplikasi"
+                aria-label={`Sunting ${app.name}`}
+                className="rounded-lg p-1.5 sm:p-2 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 transition-colors border border-transparent hover:border-indigo-500/30"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete?.(app);
+                }}
+                title="Hapus aplikasi"
+                aria-label={`Hapus ${app.name}`}
+                className="rounded-lg p-1.5 sm:p-2 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors border border-transparent hover:border-rose-500/30"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
+
           <button
             type="button"
             onClick={handleCopyLink}

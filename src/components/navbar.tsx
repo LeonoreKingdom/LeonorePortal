@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,12 +11,15 @@ import {
   FolderSync, 
   Menu, 
   X,
-  ExternalLink,
+  Users,
+  LogOut,
+  User as UserIcon,
   ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/components/auth-provider";
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { label: "App Portal", href: "/", icon: LayoutGrid },
   { label: "Papan Proyek", href: "/projects", icon: KanbanSquare },
   { label: "Knowledge Base", href: "/knowledge-base", icon: BookOpen },
@@ -27,6 +30,12 @@ const NAV_ITEMS = [
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAdmin, logout } = useAuth();
+
+  const navItems = [
+    ...BASE_NAV_ITEMS,
+    ...(isAdmin ? [{ label: "Manajemen User", href: "/users", icon: Users }] : []),
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
@@ -48,7 +57,7 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1.5 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
               item.href === "/"
@@ -72,21 +81,33 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Right Status Indicator & Mobile Menu Toggle */}
+        {/* Right User Status & Logout */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/admin"
-            title="Portal Admin & Backoffice"
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-[11px] font-semibold text-indigo-300 hover:bg-indigo-500/20 hover:border-indigo-500/50 transition-colors"
-          >
-            <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Admin</span>
-          </Link>
+          {user && (
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1 text-xs">
+                <span className="font-bold text-slate-200">{user.username}</span>
+                <span
+                  className={`rounded px-1.5 py-0.2 text-[10px] font-mono uppercase font-bold ${
+                    isAdmin
+                      ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                      : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                  }`}
+                >
+                  {user.role}
+                </span>
+              </div>
 
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Sistem Aktif</span>
-          </div>
+              <button
+                onClick={logout}
+                title="Keluar dari Portal"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 hover:border-rose-500/40 text-xs font-semibold transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Keluar</span>
+              </button>
+            </div>
+          )}
 
           {/* Mobile menu button */}
           <button
@@ -104,7 +125,7 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-800 bg-slate-950/95 px-4 py-4 backdrop-blur-xl">
           <nav className="flex flex-col gap-2">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon;
               const isActive =
                 item.href === "/"
@@ -128,16 +149,25 @@ export function Navbar() {
               );
             })}
 
-            <div className="pt-2 border-t border-slate-800/80 mt-1">
-              <Link
-                href="/admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-indigo-300 hover:bg-indigo-950/40 border border-indigo-500/20 transition-all"
-              >
-                <ShieldCheck className="h-4 w-4 text-indigo-400" />
-                <span>Portal Admin (CMS)</span>
-              </Link>
-            </div>
+            {user && (
+              <div className="pt-3 border-t border-slate-800 mt-2 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <UserIcon className="h-4 w-4 text-indigo-400" />
+                  <span className="text-slate-200 font-bold">{user.username}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">({user.role})</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="flex items-center gap-1 text-rose-400 font-bold"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Keluar</span>
+                </button>
+              </div>
+            )}
           </nav>
         </div>
       )}
