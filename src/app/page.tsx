@@ -111,6 +111,22 @@ export default function AppPortalPage() {
     fetchCategories();
   }, []);
 
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isAppModalOpen) {
+          setIsAppModalOpen(false);
+          setEditingApp(null);
+        }
+        if (isCategoryModalOpen) setIsCategoryModalOpen(false);
+        if (deleteTargetApp) setDeleteTargetApp(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isAppModalOpen, isCategoryModalOpen, deleteTargetApp]);
+
   // Save / Update App
   const handleSaveApp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -810,8 +826,14 @@ export default function AppPortalPage() {
 
       {/* MODAL: SUNTING / TAMBAH APLIKASI (ADMIN) */}
       {isAppModalOpen && editingApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+        <div 
+          onClick={() => setIsAppModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto cursor-default"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Plus className="h-4 w-4 text-indigo-400" />
@@ -1011,8 +1033,14 @@ export default function AppPortalPage() {
 
       {/* MODAL: KELOLA KATEGORI (ADMIN) */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+        <div 
+          onClick={() => setIsCategoryModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 cursor-default"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Settings className="h-4 w-4 text-indigo-400" />
@@ -1118,8 +1146,14 @@ export default function AppPortalPage() {
 
       {/* MODAL: HAPUS APLIKASI (ADMIN) */}
       {deleteTargetApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 text-center">
+        <div 
+          onClick={() => setDeleteTargetApp(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 text-center cursor-default"
+          >
             <div className="h-12 w-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
               <Trash2 className="h-6 w-6" />
             </div>

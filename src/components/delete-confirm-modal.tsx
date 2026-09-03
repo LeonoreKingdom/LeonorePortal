@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { AlertTriangle, X } from "lucide-react";
 
@@ -22,8 +22,14 @@ export function DeleteConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md rounded-2xl border border-rose-500/20 bg-slate-900 p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+    <div 
+      onClick={onCancel}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 cursor-pointer"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md rounded-2xl border border-rose-500/20 bg-slate-900 p-6 shadow-2xl animate-in zoom-in-95 duration-200 cursor-default"
+      >
         <div className="flex items-start gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/30">
             <AlertTriangle className="h-5 w-5" />
