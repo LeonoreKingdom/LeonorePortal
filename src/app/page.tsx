@@ -508,15 +508,11 @@ export default function AppPortalPage() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-800/80">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-300 mb-2 sm:mb-3">
-              <Sparkles className="h-3.5 w-3.5" />
-              LeonorePortal Workspace
-            </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white">
-              Portal Aplikasi & Portofolio
+              App Portal
             </h1>
             <p className="mt-2 text-xs sm:text-sm md:text-base text-slate-400 max-w-2xl leading-relaxed">
-              Akses cepat dan terpusat ke semua aplikasi, portofolio proyek web, modul utilitas lokal, dan integrasi workspace.
+              Akses cepat dan terpusat ke semua aplikasi.
             </p>
           </div>
 
@@ -554,20 +550,6 @@ export default function AppPortalPage() {
                 </button>
               </>
             )}
-
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2">
-              <div>
-                <div className="text-[11px] sm:text-xs text-slate-400">Total Aplikasi</div>
-                <div className="text-lg sm:text-xl font-bold text-white">{apps.length}</div>
-              </div>
-              <button 
-                onClick={fetchApps} 
-                title="Segarkan data aplikasi"
-                className="p-1.5 text-slate-500 hover:text-indigo-400 transition-colors rounded-lg hover:bg-slate-800"
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-              </button>
-            </div>
           </div>
         </div>
 
