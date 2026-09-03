@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,7 +11,8 @@ import {
   FolderSync, 
   Menu, 
   X,
-  ExternalLink
+  ExternalLink,
+  ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
 
@@ -72,7 +73,16 @@ export function Navbar() {
         </nav>
 
         {/* Right Status Indicator & Mobile Menu Toggle */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/admin"
+            title="Portal Admin & Backoffice"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-[11px] font-semibold text-indigo-300 hover:bg-indigo-500/20 hover:border-indigo-500/50 transition-colors"
+          >
+            <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
+            <span>Admin</span>
+          </Link>
+
           <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-400">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>Sistem Aktif</span>
@@ -117,6 +127,17 @@ export function Navbar() {
                 </Link>
               );
             })}
+
+            <div className="pt-2 border-t border-slate-800/80 mt-1">
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-indigo-300 hover:bg-indigo-950/40 border border-indigo-500/20 transition-all"
+              >
+                <ShieldCheck className="h-4 w-4 text-indigo-400" />
+                <span>Portal Admin (CMS)</span>
+              </Link>
+            </div>
           </nav>
         </div>
       )}

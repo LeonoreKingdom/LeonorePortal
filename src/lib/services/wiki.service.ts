@@ -1,4 +1,4 @@
-﻿import { ensureDbInitialized } from "@/lib/db";
+import { ensureDbInitialized } from "@/lib/db";
 import { WikiCategory, WikiPageItem } from "@/data/mock-wiki";
 
 export interface WikiSearchResult extends WikiPageItem {
@@ -71,6 +71,36 @@ export class WikiService {
     });
 
     return (await this.getCategoryById(id))!;
+  }
+
+  static async updateCategory(id: string, data: Partial<WikiCategory>): Promise<WikiCategory | null> {
+    const db = await ensureDbInitialized();
+    const current = await this.getCategoryById(id);
+    if (!current) return null;
+
+    const name = data.name !== undefined ? data.name : current.name;
+    const description = data.description !== undefined ? data.description : current.description;
+    const color = data.color !== undefined ? data.color : current.color;
+    const icon = data.icon !== undefined ? data.icon : current.icon;
+    const slug = data.name ? data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : id;
+
+    await db.execute({
+      sql: `UPDATE wiki_categories
+            SET name = ?, slug = ?, color = ?, icon = ?, description = ?
+            WHERE id = ?`,
+      args: [name, slug, color, icon, description, id],
+    });
+
+    return this.getCategoryById(id);
+  }
+
+  static async deleteCategory(id: string): Promise<boolean> {
+    const db = await ensureDbInitialized();
+    const res = await db.execute({
+      sql: "DELETE FROM wiki_categories WHERE id = ?",
+      args: [id],
+    });
+    return res.rowsAffected > 0;
   }
 
   static async getAllArticles(categoryId?: string, search?: string): Promise<WikiPageItem[]> {
