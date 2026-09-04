@@ -195,7 +195,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
             className="inline-flex items-center gap-1 text-slate-400 hover:text-indigo-400 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Kembali ke Proyek Saya
+            Kembali ke Projects
           </Link>
           <span>/</span>
           <span className="text-slate-200 font-medium truncate max-w-xs">{project.title}</span>

@@ -229,12 +229,8 @@ export default function ObsidianSyncPage() {
         {/* Header Title & Actions */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-800">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-purple-500/10 px-3.5 py-1 text-xs font-semibold text-purple-400 ring-1 ring-inset ring-purple-500/20 mb-3">
-              <FolderSync className="h-4 w-4 text-purple-400" />
-              Obsidian Local Vault Sync Engine
-            </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-              Sinkronisasi Vault Obsidian
+              Obsidian Sync
             </h1>
             <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-2xl leading-relaxed">
               Integrasi dua arah berkas Markdown lokal. Catatan Papan Proyek dan artikel Knowledge Base diselaraskan otomatis ke Vault Obsidian pribadi Anda.

@@ -6,7 +6,6 @@ import {
   BookOpen, 
   Search, 
   Plus, 
-  Sparkles, 
   Tag, 
   X,
   Compass,
@@ -154,10 +153,6 @@ export default function KnowledgeBasePage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 sm:pb-8 border-b border-slate-800">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-300 mb-2 sm:mb-3">
-              <Sparkles className="h-3.5 w-3.5" />
-              Wiki & Dokumentasi
-            </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white">
               Knowledge Base
             </h1>

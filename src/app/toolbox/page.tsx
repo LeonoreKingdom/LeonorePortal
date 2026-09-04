@@ -5,7 +5,6 @@ import {
   Wrench, 
   Search, 
   Sparkles, 
-  ShieldCheck, 
   Zap, 
   Layers, 
   X,
@@ -45,10 +44,6 @@ export default function ToolboxPage() {
         {/* Page Hero Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-800">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3.5 py-1 text-xs font-semibold text-indigo-400 ring-1 ring-inset ring-indigo-500/20 mb-3">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" />
-              100% Client-Side • Data Privat Tidak Keluar Perangkat
-            </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
               Toolbox
             </h1>
