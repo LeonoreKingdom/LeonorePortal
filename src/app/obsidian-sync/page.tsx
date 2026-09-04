@@ -233,7 +233,7 @@ export default function ObsidianSyncPage() {
               Obsidian Sync
             </h1>
             <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-2xl leading-relaxed">
-              Integrasi dua arah berkas Markdown lokal. Catatan Papan Proyek dan artikel Knowledge Base diselaraskan otomatis ke Vault Obsidian pribadi Anda.
+              Sinkronisasi dengan Obsidian
             </p>
           </div>
 
