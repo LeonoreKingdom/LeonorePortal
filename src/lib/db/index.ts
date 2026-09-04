@@ -251,7 +251,7 @@ async function seedDatabase(db: Client) {
     await db.execute({
       sql: `INSERT INTO wiki_categories (id, name, slug, color, icon, description, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [cat.id, cat.name, cat.name.toLowerCase().replace(/\s+/g, "-"), cat.color, cat.icon, cat.description, new Date().toISOString()],
+      args: [cat.id, cat.name, cat.name.toLowerCase().replace(/\s+/g, "-"), cat.color, cat.icon, cat.description || "", new Date().toISOString()],
     });
   }
 

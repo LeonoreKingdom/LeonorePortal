@@ -24,7 +24,7 @@ export function TaskModal({
 }: TaskModalProps) {
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<"todo" | "doing" | "done">(defaultStatus);
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [dueDate, setDueDate] = useState("");
   const [notesMarkdown, setNotesMarkdown] = useState("");
   const [activeTab, setActiveTab] = useState<"details" | "notes">("details");
@@ -161,6 +161,7 @@ export function TaskModal({
                     onChange={(e) => setPriority(e.target.value as any)}
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none"
                   >
+                    <option value="critical" className="bg-slate-900">Kritis (Critical)</option>
                     <option value="high" className="bg-slate-900">Tinggi (High)</option>
                     <option value="medium" className="bg-slate-900">Sedang (Medium)</option>
                     <option value="low" className="bg-slate-900">Rendah (Low)</option>

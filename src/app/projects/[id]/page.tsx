@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, useEffect, use } from "react";
 import Link from "next/link";
 import { 
   ArrowLeft, 
@@ -50,6 +50,18 @@ export default function ProjectKanbanPage({ params }: PageProps) {
   const [isEditingProjectNotes, setIsEditingProjectNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState(project.notesMarkdown || "");
   const [activeTaskNotes, setActiveTaskNotes] = useState<TaskItem | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setProject(data.data);
+          setNotesDraft(data.data.notesMarkdown || "");
+        }
+      })
+      .catch((err) => console.error("Gagal memuat detail proyek:", err));
+  }, [projectId]);
 
   // Task Modal state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { 
@@ -25,7 +25,8 @@ interface KanbanCardProps {
   onDragStart?: (e: React.DragEvent, task: TaskItem) => void;
 }
 
-const PRIORITY_BADGES = {
+const PRIORITY_BADGES: Record<string, string> = {
+  critical: "bg-rose-600/20 text-rose-300 border-rose-500/50 font-bold",
   high: "bg-rose-500/10 text-rose-400 border-rose-500/30",
   medium: "bg-amber-500/10 text-amber-400 border-amber-500/30",
   low: "bg-slate-800 text-slate-400 border-slate-700/60",

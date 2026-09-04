@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, useEffect, use } from "react";
 import Link from "next/link";
 import { 
   ArrowLeft, 
@@ -53,6 +53,19 @@ export default function WikiDetailPage({ params }: PageProps) {
   const [page, setPage] = useState<WikiPageItem>(initialPage);
   const [draftContent, setDraftContent] = useState(page.contentMarkdown);
   const [draftTitle, setDraftTitle] = useState(page.title);
+
+  useEffect(() => {
+    fetch(`/api/wiki/${slug}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setPage(data.data);
+          setDraftContent(data.data.contentMarkdown || "");
+          setDraftTitle(data.data.title || "");
+        }
+      })
+      .catch((err) => console.error("Gagal memuat detail artikel wiki:", err));
+  }, [slug]);
 
   const category = useMemo(() => {
     return MOCK_CATEGORIES.find((c) => c.id === page.categoryId) || MOCK_CATEGORIES[0];

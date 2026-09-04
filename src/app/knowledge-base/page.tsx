@@ -40,6 +40,26 @@ export default function KnowledgeBasePage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    fetch("/api/wiki")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setPages(data.data);
+        }
+      })
+      .catch((err) => console.error("Gagal memuat artikel wiki dari API:", err));
+
+    fetch("/api/wiki/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setCategories(data.data);
+        }
+      })
+      .catch((err) => console.error("Gagal memuat kategori wiki dari API:", err));
+  }, []);
+
   // Filtered pages
   const filteredPages = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();

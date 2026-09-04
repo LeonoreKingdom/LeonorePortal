@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   FolderKanban, 
   Search, 
@@ -26,6 +26,17 @@ export default function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<ProjectItem | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<ProjectItem | null>(null);
+
+  useEffect(() => {
+    fetch("/api/projects")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setProjects(data.data);
+        }
+      })
+      .catch((err) => console.error("Gagal memuat proyek dari API:", err));
+  }, []);
 
   // Filter projects
   const filteredProjects = useMemo(() => {

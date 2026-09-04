@@ -79,9 +79,9 @@ export class WikiService {
     if (!current) return null;
 
     const name = data.name !== undefined ? data.name : current.name;
-    const description = data.description !== undefined ? data.description : current.description;
-    const color = data.color !== undefined ? data.color : current.color;
-    const icon = data.icon !== undefined ? data.icon : current.icon;
+    const description = (data.description !== undefined ? data.description : current.description) || "";
+    const color = (data.color !== undefined ? data.color : current.color) || "#6366f1";
+    const icon = (data.icon !== undefined ? data.icon : current.icon) || "BookOpen";
     const slug = data.name ? data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : id;
 
     await db.execute({
