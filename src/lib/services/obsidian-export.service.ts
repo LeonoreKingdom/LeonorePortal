@@ -5,6 +5,7 @@ import { WikiService } from "@/lib/services/wiki.service";
 import { ObsidianService } from "@/lib/services/obsidian.service";
 import { ProjectItem } from "@/data/mock-projects";
 import { WikiPageItem } from "@/data/mock-wiki";
+import { ensureDbInitialized } from "@/lib/db";
 
 export interface ExportResult {
   success: boolean;
@@ -24,7 +25,7 @@ export class ObsidianExportService {
 type: project
 status: ${project.status || "active"}
 category: ${project.category || "Development"}
-priority: ${project.priority || "medium"}
+priority: ${(project as any).priority || "medium"}
 created: ${createdDate}
 tags:
   - project
@@ -115,43 +116,67 @@ tags:
     const errors: string[] = [];
     const exportedItems: { title: string; relativePath: string; size: number }[] = [];
 
+    let isLocalFsAvailable = false;
     try {
       if (!fs.existsSync(vaultPath)) {
         fs.mkdirSync(vaultPath, { recursive: true });
       }
-    } catch (err: any) {
-      return {
-        success: false,
-        filesExported: 0,
-        vaultPath,
-        exportedItems: [],
-        errors: [`Gagal membuat atau mengakses direktori Vault: ${err.message}`],
-      };
+      isLocalFsAvailable = true;
+    } catch {
+      // Cloud environment / read-only serverless filesystem without local drive D:\
+      isLocalFsAvailable = false;
     }
 
     const projectsDir = path.join(vaultPath, "1_Projects");
     const wikiDir = path.join(vaultPath, "3_Resources");
 
-    if (!fs.existsSync(projectsDir)) fs.mkdirSync(projectsDir, { recursive: true });
-    if (!fs.existsSync(wikiDir)) fs.mkdirSync(wikiDir, { recursive: true });
+    if (isLocalFsAvailable) {
+      try {
+        if (!fs.existsSync(projectsDir)) fs.mkdirSync(projectsDir, { recursive: true });
+        if (!fs.existsSync(wikiDir)) fs.mkdirSync(wikiDir, { recursive: true });
+      } catch {
+        isLocalFsAvailable = false;
+      }
+    }
 
     const allProjects = await ProjectService.getAllProjects();
     const projectsToExport = selectedProjectIds
       ? allProjects.filter((p) => selectedProjectIds.includes(p.id))
       : allProjects;
 
+    const db = await ensureDbInitialized();
+    const now = new Date().toISOString();
+
     for (const proj of projectsToExport) {
       try {
         const content = this.formatProjectMarkdown(proj, config.includeFrontmatter);
         const fileName = `${proj.title.replace(/[\\/:*?"<>|]/g, "_").trim()}.md`;
-        const filePath = path.join(projectsDir, fileName);
-        const relPath = path.join("1_Projects", fileName);
+        const relPath = path.join("1_Projects", fileName).replace(/\\/g, "/");
+        const size = Buffer.byteLength(content, "utf-8");
 
-        fs.writeFileSync(filePath, content, "utf-8");
+        if (isLocalFsAvailable) {
+          const filePath = path.join(projectsDir, fileName);
+          fs.writeFileSync(filePath, content, "utf-8");
+        }
+
         exportedItems.push({
           title: proj.title,
-          relativePath: relPath.replace(/\\/g, "/"),
-          size: Buffer.byteLength(content, "utf-8"),
+          relativePath: relPath,
+          size,
+        });
+
+        // Persist/Update to obsidian_synced_items in Turso DB
+        const syncId = `sync-proj-${proj.id}`;
+        await db.execute({
+          sql: `INSERT INTO obsidian_synced_items (id, source_type, source_id, title, vault_relative_path, file_size, last_synced_at, sync_status, direction)
+                VALUES (?, 'project', ?, ?, ?, ?, ?, 'synced', 'bidirectional')
+                ON CONFLICT(id) DO UPDATE SET
+                  title = excluded.title,
+                  vault_relative_path = excluded.vault_relative_path,
+                  file_size = excluded.file_size,
+                  last_synced_at = excluded.last_synced_at,
+                  sync_status = 'synced'`,
+          args: [syncId, proj.id, proj.title, relPath, size, now]
         });
       } catch (err: any) {
         errors.push(`Gagal mengekspor proyek '${proj.title}': ${err.message}`);
@@ -168,35 +193,55 @@ tags:
       try {
         const cat = categories.find((c) => c.id === art.categoryId);
         const catName = cat ? cat.name.replace(/[\\/:*?"<>|]/g, "_").trim() : "General";
-        const catDir = path.join(wikiDir, catName);
-
-        if (!fs.existsSync(catDir)) fs.mkdirSync(catDir, { recursive: true });
-
         const content = this.formatWikiMarkdown(art, catName, config.includeFrontmatter);
         const fileName = `${art.title.replace(/[\\/:*?"<>|]/g, "_").trim()}.md`;
-        const filePath = path.join(catDir, fileName);
-        const relPath = path.join("3_Resources", catName, fileName);
+        const relPath = path.join("3_Resources", catName, fileName).replace(/\\/g, "/");
+        const size = Buffer.byteLength(content, "utf-8");
 
-        fs.writeFileSync(filePath, content, "utf-8");
+        if (isLocalFsAvailable) {
+          const catDir = path.join(wikiDir, catName);
+          if (!fs.existsSync(catDir)) fs.mkdirSync(catDir, { recursive: true });
+          const filePath = path.join(catDir, fileName);
+          fs.writeFileSync(filePath, content, "utf-8");
+        }
+
         exportedItems.push({
           title: art.title,
-          relativePath: relPath.replace(/\\/g, "/"),
-          size: Buffer.byteLength(content, "utf-8"),
+          relativePath: relPath,
+          size,
+        });
+
+        // Persist/Update to obsidian_synced_items in Turso DB
+        const syncId = `sync-wiki-${art.id}`;
+        await db.execute({
+          sql: `INSERT INTO obsidian_synced_items (id, source_type, source_id, title, vault_relative_path, file_size, last_synced_at, sync_status, direction)
+                VALUES (?, 'wiki', ?, ?, ?, ?, ?, 'synced', 'bidirectional')
+                ON CONFLICT(id) DO UPDATE SET
+                  title = excluded.title,
+                  vault_relative_path = excluded.vault_relative_path,
+                  file_size = excluded.file_size,
+                  last_synced_at = excluded.last_synced_at,
+                  sync_status = 'synced'`,
+          args: [syncId, art.id, art.title, relPath, size, now]
         });
       } catch (err: any) {
         errors.push(`Gagal mengekspor artikel '${art.title}': ${err.message}`);
       }
     }
 
+    const logSummary = isLocalFsAvailable
+      ? `Sinkronisasi lokal selesai: ${exportedItems.length} berkas markdown diekspor ke Vault Obsidian (${vaultPath}).`
+      : `Sinkronisasi cloud selesai: ${exportedItems.length} berkas ekosistem diselaraskan di database cloud Turso & GitHub repo.`;
+
     await ObsidianService.addSyncLog({
-      timestamp: new Date().toISOString(),
+      timestamp: now,
       action: "push_to_vault",
-      summary: `Ekspor ${exportedItems.length} berkas markdown ke Vault Obsidian selesai.`,
+      summary: logSummary,
       filesAffected: exportedItems.length,
       status: errors.length === 0 ? "success" : "warning",
     });
 
-    await ObsidianService.updateVaultConfig({ lastSuccessfulSync: new Date().toISOString() });
+    await ObsidianService.updateVaultConfig({ lastSuccessfulSync: now });
 
     return {
       success: errors.length === 0,

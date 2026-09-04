@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { 
   RefreshCw, 
@@ -41,6 +41,7 @@ export default function ObsidianSyncPage() {
   const [syncedFiles, setSyncedFiles] = useState<SyncedFileItem[]>(MOCK_SYNCED_FILES);
   const [logs, setLogs] = useState<SyncLogItem[]>(MOCK_SYNC_LOGS);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [syncSuccessToast, setSyncSuccessToast] = useState<string | null>(null);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState<boolean>(false);
   const [syncSummary, setSyncSummary] = useState<SyncExecutionSummary | null>(null);
@@ -50,6 +51,30 @@ export default function ObsidianSyncPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>(
     MOCK_SYNCED_FILES.map((f) => f.id)
   );
+
+  const fetchSyncData = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/obsidian/sync");
+      const json = await res.json();
+      if (json.success && json.data) {
+        if (json.data.config) setConfig(json.data.config);
+        if (Array.isArray(json.data.items) && json.data.items.length > 0) {
+          setSyncedFiles(json.data.items);
+          setSelectedIds(json.data.items.map((i: any) => i.id));
+        }
+        if (Array.isArray(json.data.logs)) setLogs(json.data.logs);
+      }
+    } catch (err) {
+      console.error("Gagal mengambil data sinkronisasi:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSyncData();
+  }, []);
 
   // Filters
   const [fileFilter, setFileFilter] = useState<"all" | "project" | "wiki">("all");
@@ -79,22 +104,33 @@ export default function ObsidianSyncPage() {
     );
   };
 
-  const toggleDirection = (id: string) => {
+  const toggleDirection = async (id: string) => {
+    const item = syncedFiles.find((f) => f.id === id);
+    if (!item) return;
+
+    const nextDir: SyncedFileItem["direction"] =
+      item.direction === "bidirectional"
+        ? "export_only"
+        : item.direction === "export_only"
+        ? "import_only"
+        : "bidirectional";
+
     setSyncedFiles((prev) =>
-      prev.map((f) => {
-        if (f.id !== id) return f;
-        const nextDir: SyncedFileItem["direction"] =
-          f.direction === "bidirectional"
-            ? "export_only"
-            : f.direction === "export_only"
-            ? "import_only"
-            : "bidirectional";
-        return { ...f, direction: nextDir };
-      })
+      prev.map((f) => (f.id === id ? { ...f, direction: nextDir } : f))
     );
+
+    try {
+      await fetch("/api/obsidian/items", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, direction: nextDir }),
+      });
+    } catch (err) {
+      console.error("Gagal menyimpan arah sinkronisasi:", err);
+    }
   };
 
-  const handleTriggerSync = () => {
+  const handleTriggerSync = async () => {
     if (selectedIds.length === 0) {
       alert("Pilih setidaknya satu berkas untuk disinkronkan.");
       return;
@@ -103,45 +139,66 @@ export default function ObsidianSyncPage() {
     const startTime = Date.now();
     setIsSyncing(true);
 
-    setTimeout(() => {
-      setIsSyncing(false);
+    try {
+      const targetedFiles = syncedFiles.filter((f) => selectedIds.includes(f.id));
+      const projectIds = targetedFiles
+        .filter((f) => f.sourceType === "project")
+        .map((f) => f.sourceId);
+      const wikiSlugs = targetedFiles
+        .filter((f) => f.sourceType === "wiki")
+        .map((f) => f.sourceId);
+
+      const res = await fetch("/api/obsidian/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectIds, wikiSlugs }),
+      });
+
+      const json = await res.json();
       const durationMs = Date.now() - startTime;
       const now = new Date().toISOString();
-      setConfig((prev) => ({ ...prev, lastSuccessfulSync: now }));
 
-      const targetedFiles = syncedFiles.filter((f) => selectedIds.includes(f.id));
-      const pushedCount = targetedFiles.filter((f) => f.direction !== "import_only").length;
-      const pulledCount = targetedFiles.filter((f) => f.direction !== "export_only").length;
+      // Refresh data dari database
+      await fetchSyncData();
 
       const summaryData: SyncExecutionSummary = {
-        pushedCount,
-        pulledCount,
-        unchangedCount: 0,
-        durationMs,
+        pushedCount: json.data?.pushedCount ?? targetedFiles.length,
+        pulledCount: json.data?.pulledCount ?? 0,
+        unchangedCount: json.data?.unchangedCount ?? 0,
+        durationMs: json.data?.durationMs ?? durationMs,
         syncedFiles: targetedFiles,
         timestamp: now,
       };
 
       setSyncSummary(summaryData);
       setIsSummaryModalOpen(true);
+      setSyncSuccessToast(json.message || `${selectedIds.length} berkas markdown berhasil diselaraskan ke Vault!`);
+      setTimeout(() => setSyncSuccessToast(null), 4000);
+    } catch (err: any) {
+      alert(`Sinkronisasi gagal: ${err.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
-      const newLog: SyncLogItem = {
-        id: `log-${Date.now()}`,
-        timestamp: now,
-        action: "full_sync",
-        summary: `Sinkronisasi berhasil: ${pushedCount} diekspor, ${pulledCount} diimpor (${durationMs}ms).`,
-        filesAffected: selectedIds.length,
-        status: "success",
-      };
-      setLogs((prev) => [newLog, ...prev]);
-      setSyncSuccessToast(`${selectedIds.length} berkas markdown berhasil diselaraskan ke Vault!`);
-      setTimeout(() => setSyncSuccessToast(null), 3500);
-    }, 1200);
+  const handleSaveConfig = async (newConfig: ObsidianVaultConfig) => {
+    setConfig(newConfig);
+    try {
+      await fetch("/api/obsidian/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newConfig),
+      });
+      setSyncSuccessToast("Konfigurasi Vault berhasil disimpan!");
+      setTimeout(() => setSyncSuccessToast(null), 3000);
+    } catch (err) {
+      console.error("Gagal menyimpan konfigurasi:", err);
+    }
   };
 
   const handleExportArchive = () => {
     const selectedFiles = syncedFiles.filter((f) => selectedIds.includes(f.id));
-    alert(`Mengemas ${selectedFiles.length} berkas Markdown ke dalam arsip zip untuk Vault Obsidian...`);
+    alert(`Menyiapkan ${selectedFiles.length} berkas Markdown untuk diunduh sebagai arsip.`);
   };
 
   const formatBytes = (bytes: number) => {
@@ -497,7 +554,7 @@ export default function ObsidianSyncPage() {
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}
         config={config}
-        onSaveConfig={(newConfig) => setConfig(newConfig)}
+        onSaveConfig={handleSaveConfig}
       />
 
       {/* Sync Summary Modal */}
