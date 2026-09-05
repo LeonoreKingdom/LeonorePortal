@@ -103,7 +103,7 @@ export function ProjectModal({
                 {projectToEdit ? "Ubah Proyek" : "Buat Proyek Baru"}
               </h2>
               <p className="text-xs text-slate-400">
-                {projectToEdit ? "Perbarui informasi dan catatan proyek" : "Tambahkan proyek baru ke daftar kerja Anda"}
+                {projectToEdit ? "Perbarui informasi dan project notes" : "Tambahkan proyek baru ke daftar kerja Anda"}
               </p>
             </div>
           </div>
@@ -138,7 +138,7 @@ export function ProjectModal({
             }`}
           >
             <FileText className="h-3.5 w-3.5" />
-            Catatan Markdown
+            Project Notes
           </button>
         </div>
 

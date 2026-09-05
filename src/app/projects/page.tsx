@@ -215,7 +215,7 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-center">
-                <div className="text-[10px] sm:text-[11px] text-amber-400">Sedang Kerja</div>
+                <div className="text-[10px] sm:text-[11px] text-amber-400">In Progress</div>
                 <div className="text-base sm:text-lg font-bold text-amber-300">
                   {isLoading ? (
                     <div className="h-5 w-8 mx-auto bg-slate-800 rounded animate-pulse my-0.5" />
@@ -225,7 +225,7 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-center">
-                <div className="text-[10px] sm:text-[11px] text-emerald-400">Selesai</div>
+                <div className="text-[10px] sm:text-[11px] text-emerald-400">Done</div>
                 <div className="text-base sm:text-lg font-bold text-emerald-300">
                   {isLoading ? (
                     <div className="h-5 w-8 mx-auto bg-slate-800 rounded animate-pulse my-0.5" />

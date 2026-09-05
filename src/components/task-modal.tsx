@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, CheckCircle2, FileText } from "lucide-react";
 import { TaskItem } from "@/data/mock-projects";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import { DatePicker } from "@/components/date-picker";
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export function TaskModal({
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-indigo-400" />
             <h3 className="text-base sm:text-lg font-bold text-white">
-              {taskToEdit ? "Ubah Kartu Tugas" : "Tambah Kartu Tugas"}
+              {taskToEdit ? "Ubah Kartu Tugas" : "New Task"}
             </h3>
           </div>
           <button
@@ -146,9 +147,9 @@ export function TaskModal({
                     onChange={(e) => setStatus(e.target.value as any)}
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none"
                   >
-                    <option value="todo" className="bg-slate-900">Todo (Rencana)</option>
-                    <option value="doing" className="bg-slate-900">Sedang Dikerjakan</option>
-                    <option value="done" className="bg-slate-900">Selesai</option>
+                    <option value="todo" className="bg-slate-900">To Do</option>
+                    <option value="doing" className="bg-slate-900">In Progress</option>
+                    <option value="done" className="bg-slate-900">Done</option>
                   </select>
                 </div>
 
@@ -174,11 +175,10 @@ export function TaskModal({
                 <label className="block text-xs font-medium text-slate-300 mb-1.5">
                   Tenggat Waktu (Due Date)
                 </label>
-                <input
-                  type="date"
+                <DatePicker
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none"
+                  onChange={setDueDate}
+                  placeholder="Pilih tenggat waktu..."
                 />
               </div>
             </>
@@ -209,7 +209,7 @@ export function TaskModal({
               type="submit"
               className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20"
             >
-              {taskToEdit ? "Simpan Perubahan" : "Tambah Tugas"}
+              {taskToEdit ? "Simpan Perubahan" : "New Task"}
             </button>
           </div>
         </form>

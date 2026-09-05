@@ -150,7 +150,7 @@ export function KanbanCard({
                 className="inline-flex items-center gap-1 rounded bg-slate-950 px-2 py-1 text-[10px] font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800"
               >
                 <ChevronLeft className="h-3 w-3" />
-                Ke Todo
+                Ke To Do
               </button>
             )}
             {task.status === "done" && (
@@ -160,7 +160,7 @@ export function KanbanCard({
                 className="inline-flex items-center gap-1 rounded bg-slate-950 px-2 py-1 text-[10px] font-medium text-amber-400 hover:bg-slate-800 border border-slate-800"
               >
                 <ChevronLeft className="h-3 w-3" />
-                Ke Doing
+                Ke In Progress
               </button>
             )}
           </div>
@@ -172,7 +172,7 @@ export function KanbanCard({
                 onClick={() => onMoveStatus(task.id, "doing")}
                 className="inline-flex items-center gap-1 rounded bg-indigo-600/20 px-2 py-1 text-[10px] font-medium text-indigo-300 hover:bg-indigo-600 hover:text-white border border-indigo-500/30 transition-colors"
               >
-                Ke Doing
+                Ke In Progress
                 <ChevronRight className="h-3 w-3" />
               </button>
             )}
@@ -182,7 +182,7 @@ export function KanbanCard({
                 onClick={() => onMoveStatus(task.id, "done")}
                 className="inline-flex items-center gap-1 rounded bg-emerald-600/20 px-2 py-1 text-[10px] font-medium text-emerald-300 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 transition-colors"
               >
-                Selesai
+                Done
                 <CheckCircle2 className="h-3 w-3" />
               </button>
             )}

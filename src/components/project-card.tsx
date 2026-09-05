@@ -142,7 +142,7 @@ export function ProjectCard({
           <div className="rounded-lg bg-slate-950/80 border border-slate-800/80 p-2">
             <div className="flex items-center justify-center gap-1 text-slate-400 text-[11px]">
               <ListTodo className="h-3 w-3 text-slate-400" />
-              <span>Todo</span>
+              <span>To Do</span>
             </div>
             <div className="mt-0.5 font-bold text-slate-200">{todoTasks}</div>
           </div>
@@ -150,7 +150,7 @@ export function ProjectCard({
           <div className="rounded-lg bg-slate-950/80 border border-slate-800/80 p-2">
             <div className="flex items-center justify-center gap-1 text-amber-400 text-[11px]">
               <Clock className="h-3 w-3 text-amber-400" />
-              <span>Doing</span>
+              <span>In Progress</span>
             </div>
             <div className="mt-0.5 font-bold text-amber-300">{doingTasks}</div>
           </div>

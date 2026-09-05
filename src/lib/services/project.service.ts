@@ -97,7 +97,7 @@ export class ProjectService {
         id,
         data.title || "Proyek Baru",
         data.description || "",
-        data.notesMarkdown || `# Catatan Proyek: ${data.title || "Proyek Baru"}\n\nTulis ringkasan dan roadmap proyek di sini...`,
+        data.notesMarkdown || `# Project Notes: ${data.title || "Proyek Baru"}\n\nTulis ringkasan dan roadmap proyek di sini...`,
         data.category || "Development",
         data.status || "active",
         0,

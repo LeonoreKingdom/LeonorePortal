@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { 
@@ -87,7 +87,7 @@ export function KanbanBoard({
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-slate-300">
               <ListTodo className="h-4 w-4" />
             </div>
-            <h3 className="text-sm font-bold text-slate-200">Todo (Rencana)</h3>
+            <h3 className="text-sm font-bold text-slate-200">To Do</h3>
             <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs font-mono font-semibold text-slate-400">
               {todoTasks.length}
             </span>
@@ -97,7 +97,7 @@ export function KanbanBoard({
             type="button"
             onClick={() => onAddTask("todo")}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-            title="Tambah tugas ke Todo"
+            title="New Task in To Do"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -140,7 +140,7 @@ export function KanbanBoard({
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
               <Clock className="h-4 w-4" />
             </div>
-            <h3 className="text-sm font-bold text-amber-300">Sedang Dikerjakan</h3>
+            <h3 className="text-sm font-bold text-amber-300">In Progress</h3>
             <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-mono font-semibold text-amber-400 border border-amber-500/20">
               {doingTasks.length}
             </span>
@@ -150,7 +150,7 @@ export function KanbanBoard({
             type="button"
             onClick={() => onAddTask("doing")}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-amber-300 transition-colors"
-            title="Tambah tugas ke Doing"
+            title="New Task in In Progress"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -193,7 +193,7 @@ export function KanbanBoard({
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
               <CheckCircle2 className="h-4 w-4" />
             </div>
-            <h3 className="text-sm font-bold text-emerald-300">Selesai</h3>
+            <h3 className="text-sm font-bold text-emerald-300">Done</h3>
             <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-mono font-semibold text-emerald-400 border border-emerald-500/20">
               {doneTasks.length}
             </span>
@@ -203,7 +203,7 @@ export function KanbanBoard({
             type="button"
             onClick={() => onAddTask("done")}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-300 transition-colors"
-            title="Tambah tugas ke Selesai"
+            title="New Task in Done"
           >
             <Plus className="h-4 w-4" />
           </button>

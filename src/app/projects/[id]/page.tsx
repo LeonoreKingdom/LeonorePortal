@@ -36,7 +36,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
         category: "General",
         color: "#6366f1",
         status: "active" as const,
-        notesMarkdown: "# Catatan Proyek\n\n- Tulis catatan detail di sini...",
+        notesMarkdown: "# Project Notes\n\n- Tulis catatan detail di sini...",
         tasks: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -381,7 +381,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
               )}
             >
               <FileText className="h-4 w-4" />
-              {showNotesPanel ? "Tutup Catatan" : "Catatan Proyek"}
+              {showNotesPanel ? "Tutup Catatan" : "Project Notes"}
             </button>
 
             <button
@@ -389,7 +389,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
               className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/25 transition-all"
             >
               <Plus className="h-4 w-4" />
-              Tambah Tugas
+              New Task
             </button>
           </div>
         </div>
@@ -400,7 +400,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2 text-indigo-300 font-bold text-sm">
                 <FileText className="h-4 w-4" />
-                Catatan Markdown Proyek
+                Project Notes
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -425,7 +425,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
                 <MarkdownEditor
                   value={notesDraft}
                   onChange={setNotesDraft}
-                  placeholder="# Catatan Proyek..."
+                  placeholder="# Project Notes..."
                   minHeight="min-h-[220px]"
                 />
                 <div className="flex justify-end gap-2">
@@ -439,7 +439,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
                     onClick={handleSaveProjectNotes}
                     className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
                   >
-                    Simpan Catatan
+                    Simpan Project Notes
                   </button>
                 </div>
               </div>
@@ -476,7 +476,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
             {isLoading ? (
               <div className="h-4 w-32 rounded bg-slate-800 animate-pulse" />
             ) : (
-              <span>Selesai: <strong className="text-emerald-400">{doneTasks}</strong> / {totalTasks} ({progressPercent}%)</span>
+              <span>Done: <strong className="text-emerald-400">{doneTasks}</strong> / {totalTasks} ({progressPercent}%)</span>
             )}
             <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-800">
               <div
@@ -492,9 +492,9 @@ export default function ProjectKanbanPage({ params }: PageProps) {
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
               {[
-                { title: "Todo (Rencana)" },
-                { title: "Sedang Dikerjakan" },
-                { title: "Selesai" },
+                { title: "To Do" },
+                { title: "In Progress" },
+                { title: "Done" },
               ].map((col, idx) => (
                 <div
                   key={idx}
