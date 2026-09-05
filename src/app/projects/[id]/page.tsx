@@ -45,6 +45,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
   }, [projectId]);
 
   const [project, setProject] = useState<ProjectItem>(initialProject);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [taskSearch, setTaskSearch] = useState("");
   const [showNotesPanel, setShowNotesPanel] = useState(false);
   const [isEditingProjectNotes, setIsEditingProjectNotes] = useState(false);
@@ -52,6 +53,7 @@ export default function ProjectKanbanPage({ params }: PageProps) {
   const [activeTaskNotes, setActiveTaskNotes] = useState<TaskItem | null>(null);
 
   useEffect(() => {
+    setIsLoading(true);
     fetch(`/api/projects/${projectId}`)
       .then((res) => res.json())
       .then((data) => {
@@ -60,7 +62,8 @@ export default function ProjectKanbanPage({ params }: PageProps) {
           setNotesDraft(data.data.notesMarkdown || "");
         }
       })
-      .catch((err) => console.error("Gagal memuat detail proyek:", err));
+      .catch((err) => console.error("Gagal memuat detail proyek:", err))
+      .finally(() => setIsLoading(false));
   }, [projectId]);
 
   // Task Modal state
@@ -337,18 +340,22 @@ export default function ProjectKanbanPage({ params }: PageProps) {
                 <span className="rounded-md bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-300 border border-slate-700/60">
                   {project.category}
                 </span>
-                <span
-                  className={cn(
-                    "rounded-full px-2.5 py-0.5 text-xs font-medium border capitalize",
-                    project.status === "active"
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                      : project.status === "completed"
-                      ? "border-sky-500/30 bg-sky-500/10 text-sky-400"
-                      : "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                  )}
-                >
-                  {project.status === "active" ? "Aktif" : project.status === "completed" ? "Selesai" : "Ditunda"}
-                </span>
+                {isLoading ? (
+                  <div className="h-5 w-16 rounded-full bg-slate-800 animate-pulse" />
+                ) : (
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-xs font-medium border capitalize",
+                      project.status === "active"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        : project.status === "completed"
+                        ? "border-sky-500/30 bg-sky-500/10 text-sky-400"
+                        : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                    )}
+                  >
+                    {project.status === "active" ? "Aktif" : project.status === "completed" ? "Selesai" : "Ditunda"}
+                  </span>
+                )}
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                 {project.title}
@@ -466,7 +473,11 @@ export default function ProjectKanbanPage({ params }: PageProps) {
           </div>
 
           <div className="flex items-center gap-4 text-xs text-slate-400 font-medium">
-            <span>Selesai: <strong className="text-emerald-400">{doneTasks}</strong> / {totalTasks} ({progressPercent}%)</span>
+            {isLoading ? (
+              <div className="h-4 w-32 rounded bg-slate-800 animate-pulse" />
+            ) : (
+              <span>Selesai: <strong className="text-emerald-400">{doneTasks}</strong> / {totalTasks} ({progressPercent}%)</span>
+            )}
             <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-800">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-400"
@@ -478,14 +489,56 @@ export default function ProjectKanbanPage({ params }: PageProps) {
 
         {/* The Kanban Board */}
         <div className="mt-4">
-          <KanbanBoard
-            tasks={filteredTasks}
-            onMoveStatus={handleMoveStatus}
-            onAddTask={handleOpenAddTask}
-            onEditTask={handleOpenEditTask}
-            onDeleteTask={handleRequestDeleteTask}
-            onViewNotes={(task) => setActiveTaskNotes(task)}
-          />
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+              {[
+                { title: "Todo (Rencana)" },
+                { title: "Sedang Dikerjakan" },
+                { title: "Selesai" },
+              ].map((col, idx) => (
+                <div
+                  key={idx}
+                  className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950/60 p-4 shadow-sm animate-pulse space-y-4"
+                >
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-lg bg-slate-800" />
+                      <div className="h-4 w-28 rounded bg-slate-800" />
+                      <div className="h-4 w-6 rounded-full bg-slate-800" />
+                    </div>
+                  </div>
+                  <div className="space-y-3 min-h-[220px]">
+                    {[1, 2].map((cardIdx) => (
+                      <div
+                        key={cardIdx}
+                        className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-4 space-y-3"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="h-3.5 w-14 rounded bg-slate-800" />
+                          <div className="h-3.5 w-12 rounded bg-slate-800" />
+                        </div>
+                        <div className="h-4 w-3/4 rounded bg-slate-800" />
+                        <div className="h-3 w-full rounded bg-slate-800/60" />
+                        <div className="pt-2 border-t border-slate-800/60 flex justify-between items-center">
+                          <div className="h-3 w-16 rounded bg-slate-800" />
+                          <div className="h-5 w-14 rounded bg-slate-800" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <KanbanBoard
+              tasks={filteredTasks}
+              onMoveStatus={handleMoveStatus}
+              onAddTask={handleOpenAddTask}
+              onEditTask={handleOpenEditTask}
+              onDeleteTask={handleRequestDeleteTask}
+              onViewNotes={(task) => setActiveTaskNotes(task)}
+            />
+          )}
         </div>
       </div>
 

@@ -20,21 +20,31 @@ const STATUS_FILTERS = ["Semua", "active", "completed", "on-hold"];
 export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
-  const [projects, setProjects] = useState<ProjectItem[]>(MOCK_PROJECTS);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeNotesProject, setActiveNotesProject] = useState<ProjectItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<ProjectItem | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<ProjectItem | null>(null);
 
   useEffect(() => {
+    setIsLoading(true);
     fetch("/api/projects")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           setProjects(data.data);
+        } else {
+          setProjects(MOCK_PROJECTS);
         }
       })
-      .catch((err) => console.error("Gagal memuat proyek dari API:", err));
+      .catch((err) => {
+        console.error("Gagal memuat proyek dari API:", err);
+        setProjects(MOCK_PROJECTS);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   // Filter projects
@@ -196,15 +206,33 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-center">
                 <div className="text-[10px] sm:text-[11px] text-slate-400">Total Proyek</div>
-                <div className="text-base sm:text-lg font-bold text-white">{projects.length}</div>
+                <div className="text-base sm:text-lg font-bold text-white">
+                  {isLoading ? (
+                    <div className="h-5 w-8 mx-auto bg-slate-800 rounded animate-pulse my-0.5" />
+                  ) : (
+                    projects.length
+                  )}
+                </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-center">
                 <div className="text-[10px] sm:text-[11px] text-amber-400">Sedang Kerja</div>
-                <div className="text-base sm:text-lg font-bold text-amber-300">{doingTasks}</div>
+                <div className="text-base sm:text-lg font-bold text-amber-300">
+                  {isLoading ? (
+                    <div className="h-5 w-8 mx-auto bg-slate-800 rounded animate-pulse my-0.5" />
+                  ) : (
+                    doingTasks
+                  )}
+                </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-center">
                 <div className="text-[10px] sm:text-[11px] text-emerald-400">Selesai</div>
-                <div className="text-base sm:text-lg font-bold text-emerald-300">{doneTasks}</div>
+                <div className="text-base sm:text-lg font-bold text-emerald-300">
+                  {isLoading ? (
+                    <div className="h-5 w-8 mx-auto bg-slate-800 rounded animate-pulse my-0.5" />
+                  ) : (
+                    doneTasks
+                  )}
+                </div>
               </div>
             </div>
 
@@ -264,7 +292,45 @@ export default function ProjectsPage() {
         </div>
 
         {/* Project Cards Grid */}
-        {filteredProjects.length === 0 ? (
+        {isLoading ? (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 backdrop-blur-sm animate-pulse space-y-4"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-slate-800" />
+                      <div className="h-4 w-20 rounded-md bg-slate-800" />
+                    </div>
+                    <div className="h-5 w-14 rounded-full bg-slate-800" />
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="h-6 w-3/4 rounded bg-slate-800" />
+                    <div className="h-3.5 w-full rounded bg-slate-800/70" />
+                    <div className="h-3.5 w-4/5 rounded bg-slate-800/70" />
+                  </div>
+                  <div className="mt-5 space-y-2">
+                    <div className="flex justify-between">
+                      <div className="h-3 w-16 rounded bg-slate-800" />
+                      <div className="h-3 w-8 rounded bg-slate-800" />
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-800" />
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-slate-800/60 flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <div className="h-4 w-12 rounded bg-slate-800" />
+                    <div className="h-4 w-14 rounded bg-slate-800" />
+                  </div>
+                  <div className="h-4 w-16 rounded bg-slate-800" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProjects.length === 0 ? (
           <div className="mt-16 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 p-12 text-center">
             <FolderKanban className="h-10 w-10 text-slate-600 mb-3" />
             <h3 className="text-base font-semibold text-slate-300">Tidak ada proyek ditemukan</h3>
