@@ -56,11 +56,18 @@ export const MOCK_CATEGORIES: WikiCategory[] = [
     "description": "Dokumentasi dan panduan seputar Guides"
   },
   {
-    "id": "cat-ideas-notes",
-    "name": "Ideas & Notes",
+    "id": "cat-ideas",
+    "name": "Ideas",
     "color": "#ec4899",
     "icon": "BookOpen",
-    "description": "Ide, gagasan konsep, inspirasi, dan catatan cepat"
+    "description": "Ide kreatif, eksplorasi konsep, dan gagasan masa depan"
+  },
+  {
+    "id": "cat-notes",
+    "name": "Notes",
+    "color": "#8b5cf6",
+    "icon": "BookOpen",
+    "description": "Catatan harian, rangkuman referensi, dan memo ringkas"
   },
   {
     "id": "cat-plans",
@@ -194,19 +201,35 @@ export const MOCK_WIKI_PAGES: WikiPageItem[] = [
   },
   {
     "id": "art-inspirasi-catatan-ide-ekosistem",
-    "title": "Inspirasi & Catatan Ide Pengembangan Fitur Ekosistem",
+    "title": "Inspirasi & Ide Pengembangan Fitur Ekosistem",
     "slug": "inspirasi-catatan-ide-pengembangan-fitur-ekosistem",
-    "categoryId": "cat-ideas-notes",
-    "contentMarkdown": "# Inspirasi & Catatan Ide Pengembangan Fitur Ekosistem\n\nKumpulan ide kreatif, eksplorasi teknologi, dan catatan konsep masa depan untuk ekosistem LeonoreKingdom & LeonorePortal.\n\n## 1. Ide Fitur & Konsep Baru:\n- **Unified Activity Feed**: Menampilkan linimasa aktivitas lintas proyek dan aplikasi dalam satu stream terintegrasi.\n- **AI-Powered Daily Standup**: Ringkasan otomatis progres harian berbasis commit GitHub dan status tugas kanban.\n- **Quick Capture Widget**: Floating widget cepat untuk menangkap ide spontan tanpa mengganggu fokus kerja utama.\n- **Semantic Codebase Search**: Integrasi pencarian semantik cerdas untuk dokumentasi wiki dan repo kode.\n\n## 2. Catatan Eksplorasi Arsitektur:\n- Evaluasi penggunaan WebSockets / SSE untuk pembaruan papan Kanban waktu-nyata (*real-time collaborative updates*).\n- Pertimbangan caching edge berbasis Cloudflare Workers untuk konten wiki publik.\n- Sinkronisasi otomatis dua arah yang lebih mendalam dengan Obsidian vault menggunakan Git submodule atau webhook.\n\n## 3. Backlog Gagasan Desain:\n- Eksplorasi tema retro-cyberpunk dan mode kontras tinggi untuk dashboard pengguna.\n- Kartu analitik produktivitas mingguan dengan visualisasi interaktif.\n",
+    "categoryId": "cat-ideas",
+    "contentMarkdown": "# Inspirasi & Ide Pengembangan Fitur Ekosistem\n\nKumpulan ide kreatif, eksplorasi teknologi, dan catatan konsep masa depan untuk ekosistem LeonoreKingdom & LeonorePortal.\n\n## 1. Ide Fitur & Konsep Baru:\n- **Unified Activity Feed**: Menampilkan linimasa aktivitas lintas proyek dan aplikasi dalam satu stream terintegrasi.\n- **AI-Powered Daily Standup**: Ringkasan otomatis progres harian berbasis commit GitHub dan status tugas kanban.\n- **Quick Capture Widget**: Floating widget cepat untuk menangkap ide spontan tanpa mengganggu fokus kerja utama.\n- **Semantic Codebase Search**: Integrasi pencarian semantik cerdas untuk dokumentasi wiki dan repo kode.\n\n## 2. Catatan Eksplorasi Arsitektur:\n- Evaluasi penggunaan WebSockets / SSE untuk pembaruan papan Kanban waktu-nyata (*real-time collaborative updates*).\n- Pertimbangan caching edge berbasis Cloudflare Workers untuk konten wiki publik.\n- Sinkronisasi otomatis dua arah yang lebih mendalam dengan Obsidian vault menggunakan Git submodule atau webhook.\n\n## 3. Backlog Gagasan Desain:\n- Eksplorasi tema retro-cyberpunk dan mode kontras tinggi untuk dashboard pengguna.\n- Kartu analitik produktivitas mingguan dengan visualisasi interaktif.\n",
     "tags": [
       "Ideas",
-      "Notes",
       "Brainstorming",
-      "Ecosystem"
+      "Ecosystem",
+      "Innovation"
     ],
     "readTime": "3 min baca",
     "createdAt": "2026-09-05T19:40:40.639Z",
     "updatedAt": "2026-09-05T19:40:40.639Z"
+  },
+  {
+    "id": "art-catatan-referensi-best-practices",
+    "title": "Catatan Referensi & Best Practices Pengelolaan Portal",
+    "slug": "catatan-referensi-best-practices-pengelolaan-portal",
+    "categoryId": "cat-notes",
+    "contentMarkdown": "# Catatan Referensi & Best Practices Pengelolaan Portal\n\nCatatan harian, rangkuman konvensi teknis, dan memo pedoman praktis dalam mengelola LeonorePortal dan subsistem terkait.\n\n## 1. Konvensi Penamaan & Standar Kode:\n- **Komponen**: PascalCase (misal: `DatePicker.tsx`, `KanbanBoard.tsx`).\n- **Endpoint API**: RESTful dengan kata benda jamak (misal: `/api/projects`, `/api/wiki/categories`).\n- **Status Proyek**: Nilai kanonis `active` (Aktif), `completed` (Selesai), `on_hold` (Ditunda).\n- **Status Tugas**: Tiga tahap baku `To Do`, `In Progress`, dan `Done`.\n\n## 2. Praktik Sinkronisasi Obsidian:\n- File markdown diorganisasikan ke folder PARA: `1_Projects/` untuk catatan Kanban dan `3_Resources/` untuk artikel Knowledge Base.\n- Setiap artikel menyertakan frontmatter YAML standar (`type`, `category`, `created`, `tags`).\n\n## 3. Memo Pengelolaan Database:\n- Semua mutasi tabel yang melibatkan penghitungan progres proyek wajib memanggil helper sinkronisasi otomatis agar status proyek selalu akurat.\n- Gunakan parameterized queries untuk memastikan keamanan basis data Turso LibSQL.\n",
+    "tags": [
+      "Notes",
+      "Reference",
+      "BestPractices",
+      "Ecosystem"
+    ],
+    "readTime": "3 min baca",
+    "createdAt": "2026-09-05T19:49:12.822Z",
+    "updatedAt": "2026-09-05T19:49:12.822Z"
   },
   {
     "id": "art-roadmap-rencana-strategis-leonore",
