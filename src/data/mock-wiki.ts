@@ -61,6 +61,13 @@ export const MOCK_CATEGORIES: WikiCategory[] = [
     "color": "#ec4899",
     "icon": "BookOpen",
     "description": "Ide, gagasan konsep, inspirasi, dan catatan cepat"
+  },
+  {
+    "id": "cat-plans",
+    "name": "Plans",
+    "color": "#14b8a6",
+    "icon": "BookOpen",
+    "description": "Rencana strategis, roadmap rilis, dan perencanaan proyek"
   }
 ];
 
@@ -200,5 +207,21 @@ export const MOCK_WIKI_PAGES: WikiPageItem[] = [
     "readTime": "3 min baca",
     "createdAt": "2026-09-05T19:40:40.639Z",
     "updatedAt": "2026-09-05T19:40:40.639Z"
+  },
+  {
+    "id": "art-roadmap-rencana-strategis-leonore",
+    "title": "Roadmap & Rencana Strategis Ekosistem Leonore 2026–2027",
+    "slug": "roadmap-rencana-strategis-ekosistem-leonore-2026-2027",
+    "categoryId": "cat-plans",
+    "contentMarkdown": "# Roadmap & Rencana Strategis Ekosistem Leonore 2026–2027\n\nDokumen perencanaan strategis, milestone rilis produk, dan rencana ekspansi infrastruktur untuk seluruh ekosistem LeonoreKingdom.\n\n## 1. Fase 1: Konsolidasi & Stabilitas Ekosistem (Q3 2026)\n- **Otentikasi Terpusat (SSO)**: Menghubungkan sesi login antara LeonorePortal dan aplikasi sub-domain lainnya.\n- **Sinkronisasi Dua Arah Real-time**: Integrasi mendalam antara Obsidian Vault lokal dan repositori GitHub.\n- **Peningkatan Performa & Lazy Load**: Penerapan skeleton loaders dan optimasi query Turso DB untuk latensi di bawah 100ms.\n\n## 2. Fase 2: Otomasi & Fitur AI Lanjutan (Q4 2026)\n- **Agentic Task Assistant**: Asisten otomatis untuk memecah proyek besar menjadi task-task kanban yang actionable.\n- **Knowledge Graph Visualization**: Visualisasi relasi antar dokumen wiki dan catatan Zettelkasten dalam bentuk graf interaktif.\n- **Automated Health Monitoring**: Sistem pengecekan status serverless dan deteksi downtime otomatis lintas subdomain.\n\n## 3. Fase 3: Skalabilitas & Komunitas (2027)\n- **Ekspansi Multi-Region Database**: Replikasi read-replica Turso ke wilayah Asia Tenggara (Singapura/Jakarta) untuk latensi minimal.\n- **Workspace Kolaboratif**: Dukungan multi-role member, kontributor eksternal, dan audit log perubahan dokumen.\n- **Mobile-Responsive Progressive Web App (PWA)**: Akses offline dan instalasi langsung di perangkat mobile.\n",
+    "tags": [
+      "Plans",
+      "Roadmap",
+      "Strategy",
+      "Milestones"
+    ],
+    "readTime": "3 min baca",
+    "createdAt": "2026-09-05T19:46:00.670Z",
+    "updatedAt": "2026-09-05T19:46:00.670Z"
   }
 ];
