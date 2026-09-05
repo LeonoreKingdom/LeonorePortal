@@ -26,6 +26,14 @@ export class ProjectService {
       const tasks = await TaskService.getTasksByProjectId(pId);
       const category = String(r.category || "Development");
 
+      let status = (r.status as any) || "active";
+      const doneCount = tasks.filter((t) => t.status === "done").length;
+      if (tasks.length > 0 && doneCount === tasks.length) {
+        status = "completed";
+      } else if (status === "completed" && doneCount < tasks.length) {
+        status = "active";
+      }
+
       projects.push({
         id: pId,
         title: String(r.title),
@@ -33,7 +41,7 @@ export class ProjectService {
         notesMarkdown: String(r.notes || ""),
         category,
         color: CATEGORY_COLORS[category] || "#6366f1",
-        status: (r.status as any) || "active",
+        status,
         tasks,
         createdAt: String(r.created_at),
         updatedAt: String(r.updated_at),
@@ -55,6 +63,14 @@ export class ProjectService {
     const tasks = await TaskService.getTasksByProjectId(id);
     const category = String(r.category || "Development");
 
+    let status = (r.status as any) || "active";
+    const doneCount = tasks.filter((t) => t.status === "done").length;
+    if (tasks.length > 0 && doneCount === tasks.length) {
+      status = "completed";
+    } else if (status === "completed" && doneCount < tasks.length) {
+      status = "active";
+    }
+
     return {
       id: String(r.id),
       title: String(r.title),
@@ -62,7 +78,7 @@ export class ProjectService {
       notesMarkdown: String(r.notes || ""),
       category,
       color: CATEGORY_COLORS[category] || "#6366f1",
-      status: (r.status as any) || "active",
+      status,
       tasks,
       createdAt: String(r.created_at),
       updatedAt: String(r.updated_at),

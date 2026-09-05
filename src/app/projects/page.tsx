@@ -93,18 +93,26 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (projectToDelete) {
-      setProjects((prev) => prev.filter((p) => p.id !== projectToDelete.id));
+      const id = projectToDelete.id;
+      setProjects((prev) => prev.filter((p) => p.id !== id));
       setProjectToDelete(null);
+
+      try {
+        await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      } catch (err) {
+        console.error("Gagal menghapus proyek:", err);
+      }
     }
   };
 
-  const handleSaveProject = (projectData: Partial<ProjectItem>) => {
+  const handleSaveProject = async (projectData: Partial<ProjectItem>) => {
     if (projectToEdit) {
+      const id = projectToEdit.id;
       setProjects((prev) =>
         prev.map((p) =>
-          p.id === projectToEdit.id
+          p.id === id
             ? {
                 ...p,
                 ...projectData,
@@ -113,12 +121,27 @@ export default function ProjectsPage() {
             : p
         )
       );
+
+      try {
+        const res = await fetch(`/api/projects/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(projectData),
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          setProjects((prev) => prev.map((p) => (p.id === id ? json.data : p)));
+        }
+      } catch (err) {
+        console.error("Gagal memperbarui proyek:", err);
+      }
     } else {
+      const tempId = projectData.id || `proj-${Date.now()}`;
       const newProj: ProjectItem = {
-        id: projectData.id || `proj-${Date.now()}`,
+        id: tempId,
         title: projectData.title || "Proyek Baru",
         description: projectData.description || "",
-        category: projectData.category || "Web Development",
+        category: projectData.category || "Development",
         color: projectData.color || "#6366f1",
         status: projectData.status || "active",
         notesMarkdown: projectData.notesMarkdown || "",
@@ -127,6 +150,20 @@ export default function ProjectsPage() {
         updatedAt: new Date().toISOString(),
       };
       setProjects((prev) => [newProj, ...prev]);
+
+      try {
+        const res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(projectData),
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          setProjects((prev) => prev.map((p) => (p.id === tempId ? json.data : p)));
+        }
+      } catch (err) {
+        console.error("Gagal membuat proyek:", err);
+      }
     }
   };
 

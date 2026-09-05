@@ -1,4 +1,4 @@
-﻿import { ensureDbInitialized } from "@/lib/db";
+import { ensureDbInitialized } from "@/lib/db";
 import { TaskItem } from "@/data/mock-projects";
 
 export class TaskService {
@@ -75,6 +75,7 @@ export class TaskService {
       ],
     });
 
+    await this.syncProjectProgressAndStatus(projectId);
     return (await this.getTaskById(id))!;
   }
 
@@ -98,29 +99,84 @@ export class TaskService {
       args: [title, columnId, priority, dueDate, notes, sortOrder, now, id],
     });
 
+    await this.syncProjectProgressAndStatus(current.projectId);
+
     return this.getTaskById(id);
   }
 
   static async deleteTask(id: string): Promise<boolean> {
     const db = await ensureDbInitialized();
+    const current = await this.getTaskById(id);
+    if (!current) return false;
+
     const res = await db.execute({
       sql: "DELETE FROM tasks WHERE id = ?",
       args: [id],
     });
-    return res.rowsAffected > 0;
+
+    if (res.rowsAffected > 0) {
+      await this.syncProjectProgressAndStatus(current.projectId);
+      return true;
+    }
+    return false;
   }
 
   static async batchReorderTasks(tasks: { id: string; status: "todo" | "doing" | "done"; sortOrder: number }[]): Promise<boolean> {
     const db = await ensureDbInitialized();
     const now = new Date().toISOString();
 
+    let projectId: string | null = null;
     for (const t of tasks) {
+      if (!projectId) {
+        const item = await this.getTaskById(t.id);
+        if (item) projectId = item.projectId;
+      }
       await db.execute({
         sql: "UPDATE tasks SET column_id = ?, sort_order = ?, updated_at = ? WHERE id = ?",
         args: [t.status, t.sortOrder, now, t.id],
       });
     }
 
+    if (projectId) {
+      await this.syncProjectProgressAndStatus(projectId);
+    }
+
     return true;
+  }
+
+  static async syncProjectProgressAndStatus(projectId: string): Promise<void> {
+    try {
+      const db = await ensureDbInitialized();
+      const tasksRes = await db.execute({
+        sql: "SELECT column_id FROM tasks WHERE project_id = ?",
+        args: [projectId],
+      });
+
+      const total = tasksRes.rows.length;
+      const doneCount = tasksRes.rows.filter((r) => r.column_id === "done").length;
+      const progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+      const projRes = await db.execute({
+        sql: "SELECT status FROM projects WHERE id = ?",
+        args: [projectId],
+      });
+      if (projRes.rows.length === 0) return;
+
+      const currentStatus = String(projRes.rows[0].status || "active");
+      let newStatus = currentStatus;
+      if (total > 0 && doneCount === total) {
+        newStatus = "completed";
+      } else if (currentStatus === "completed" && doneCount < total) {
+        newStatus = "active";
+      }
+
+      const now = new Date().toISOString();
+      await db.execute({
+        sql: "UPDATE projects SET progress = ?, status = ?, updated_at = ? WHERE id = ?",
+        args: [progress, newStatus, now, projectId],
+      });
+    } catch (err) {
+      console.error(`Gagal sinkronisasi status proyek ${projectId}:`, err);
+    }
   }
 }

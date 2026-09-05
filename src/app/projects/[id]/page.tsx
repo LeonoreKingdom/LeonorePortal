@@ -84,21 +84,53 @@ export default function ProjectKanbanPage({ params }: PageProps) {
   const doneTasks = project.tasks.filter((t) => t.status === "done").length;
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
+  function computeProjectStatus(
+    tasks: TaskItem[],
+    currentStatus: "active" | "completed" | "on-hold"
+  ): "active" | "completed" | "on-hold" {
+    if (tasks.length === 0) return currentStatus;
+    const doneCount = tasks.filter((t) => t.status === "done").length;
+    if (doneCount === tasks.length) return "completed";
+    if (currentStatus === "completed" && doneCount < tasks.length) return "active";
+    return currentStatus;
+  }
+
   // Move task status handler
-  const handleMoveStatus = (taskId: string, newStatus: "todo" | "doing" | "done") => {
+  const handleMoveStatus = async (taskId: string, newStatus: "todo" | "doing" | "done") => {
+    const updatedTasks = project.tasks.map((t) =>
+      t.id === taskId
+        ? {
+            ...t,
+            status: newStatus,
+            updatedAt: new Date().toISOString(),
+          }
+        : t
+    );
+    const newStatusProject = computeProjectStatus(updatedTasks, project.status);
+
     setProject((prev) => ({
       ...prev,
-      tasks: prev.tasks.map((t) =>
-        t.id === taskId
-          ? {
-              ...t,
-              status: newStatus,
-              updatedAt: new Date().toISOString(),
-            }
-          : t
-      ),
+      status: newStatusProject,
+      tasks: updatedTasks,
       updatedAt: new Date().toISOString(),
     }));
+
+    try {
+      await fetch(`/api/tasks/${taskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (newStatusProject !== project.status) {
+        await fetch(`/api/projects/${projectId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatusProject }),
+        });
+      }
+    } catch (err) {
+      console.error("Gagal memperbarui status tugas:", err);
+    }
   };
 
   const handleOpenAddTask = (status: "todo" | "doing" | "done" = "todo") => {
@@ -119,35 +151,78 @@ export default function ProjectKanbanPage({ params }: PageProps) {
     }
   };
 
-  const handleConfirmDeleteTask = () => {
+  const handleConfirmDeleteTask = async () => {
     if (taskToDelete) {
+      const taskId = taskToDelete.id;
+      const updatedTasks = project.tasks.filter((t) => t.id !== taskId);
+      const newStatusProject = computeProjectStatus(updatedTasks, project.status);
+
       setProject((prev) => ({
         ...prev,
-        tasks: prev.tasks.filter((t) => t.id !== taskToDelete.id),
+        status: newStatusProject,
+        tasks: updatedTasks,
         updatedAt: new Date().toISOString(),
       }));
       setTaskToDelete(null);
+
+      try {
+        await fetch(`/api/tasks/${taskId}`, {
+          method: "DELETE",
+        });
+        if (newStatusProject !== project.status) {
+          await fetch(`/api/projects/${projectId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatusProject }),
+          });
+        }
+      } catch (err) {
+        console.error("Gagal menghapus tugas:", err);
+      }
     }
   };
 
-  const handleSaveTask = (taskData: Partial<TaskItem>) => {
+  const handleSaveTask = async (taskData: Partial<TaskItem>) => {
     if (taskToEdit) {
+      const updatedTasks = project.tasks.map((t) =>
+        t.id === taskToEdit.id
+          ? ({
+              ...t,
+              ...taskData,
+              updatedAt: new Date().toISOString(),
+            } as TaskItem)
+          : t
+      );
+      const newStatusProject = computeProjectStatus(updatedTasks, project.status);
+
       setProject((prev) => ({
         ...prev,
-        tasks: prev.tasks.map((t) =>
-          t.id === taskToEdit.id
-            ? ({
-                ...t,
-                ...taskData,
-                updatedAt: new Date().toISOString(),
-              } as TaskItem)
-            : t
-        ),
+        status: newStatusProject,
+        tasks: updatedTasks,
         updatedAt: new Date().toISOString(),
       }));
+      setIsTaskModalOpen(false);
+
+      try {
+        await fetch(`/api/tasks/${taskToEdit.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(taskData),
+        });
+        if (newStatusProject !== project.status) {
+          await fetch(`/api/projects/${projectId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatusProject }),
+          });
+        }
+      } catch (err) {
+        console.error("Gagal memperbarui tugas:", err);
+      }
     } else {
+      const tempId = taskData.id || `task-${Date.now()}`;
       const newTask: TaskItem = {
-        id: taskData.id || `task-${Date.now()}`,
+        id: tempId,
         projectId: project.id,
         title: taskData.title || "Tugas Baru",
         status: taskData.status || taskModalDefaultStatus,
@@ -158,21 +233,64 @@ export default function ProjectKanbanPage({ params }: PageProps) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+
+      const updatedTasks = [...project.tasks, newTask];
+      const newStatusProject = computeProjectStatus(updatedTasks, project.status);
+
       setProject((prev) => ({
         ...prev,
-        tasks: [...prev.tasks, newTask],
+        status: newStatusProject,
+        tasks: updatedTasks,
         updatedAt: new Date().toISOString(),
       }));
+      setIsTaskModalOpen(false);
+
+      try {
+        const res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...newTask,
+            projectId: project.id,
+          }),
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          setProject((prev) => ({
+            ...prev,
+            tasks: prev.tasks.map((t) => (t.id === tempId ? json.data : t)),
+          }));
+        }
+        if (newStatusProject !== project.status) {
+          await fetch(`/api/projects/${projectId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatusProject }),
+          });
+        }
+      } catch (err) {
+        console.error("Gagal membuat tugas:", err);
+      }
     }
   };
 
-  const handleSaveProjectNotes = () => {
+  const handleSaveProjectNotes = async () => {
     setProject((prev) => ({
       ...prev,
       notesMarkdown: notesDraft,
       updatedAt: new Date().toISOString(),
     }));
     setIsEditingProjectNotes(false);
+
+    try {
+      await fetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notesMarkdown: notesDraft }),
+      });
+    } catch (err) {
+      console.error("Gagal menyimpan catatan proyek:", err);
+    }
   };
 
   return (
