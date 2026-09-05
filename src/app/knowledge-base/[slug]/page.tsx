@@ -17,7 +17,7 @@ import {
   Eye,
   CheckCircle2
 } from "lucide-react";
-import { MOCK_CATEGORIES, MOCK_WIKI_PAGES, WikiPageItem } from "@/data/mock-wiki";
+import { MOCK_CATEGORIES, MOCK_WIKI_PAGES, WikiPageItem, WikiCategory } from "@/data/mock-wiki";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { WikiModal } from "@/components/wiki-modal";
@@ -53,6 +53,18 @@ export default function WikiDetailPage({ params }: PageProps) {
   const [page, setPage] = useState<WikiPageItem>(initialPage);
   const [draftContent, setDraftContent] = useState(page.contentMarkdown);
   const [draftTitle, setDraftTitle] = useState(page.title);
+  const [categories, setCategories] = useState<WikiCategory[]>(MOCK_CATEGORIES);
+
+  useEffect(() => {
+    fetch("/api/wiki/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setCategories(data.data);
+        }
+      })
+      .catch((err) => console.error("Gagal memuat kategori wiki:", err));
+  }, []);
 
   useEffect(() => {
     fetch(`/api/wiki/${slug}`)
@@ -68,8 +80,8 @@ export default function WikiDetailPage({ params }: PageProps) {
   }, [slug]);
 
   const category = useMemo(() => {
-    return MOCK_CATEGORIES.find((c) => c.id === page.categoryId) || MOCK_CATEGORIES[0];
-  }, [page.categoryId]);
+    return categories.find((c) => c.id === page.categoryId) || categories[0] || MOCK_CATEGORIES[0];
+  }, [categories, page.categoryId]);
 
   const relatedPages = useMemo(() => {
     return MOCK_WIKI_PAGES.filter(
@@ -363,7 +375,7 @@ export default function WikiDetailPage({ params }: PageProps) {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveEdit}
         existingPages={MOCK_WIKI_PAGES}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         pageToEdit={page}
       />
     </div>

@@ -207,6 +207,23 @@ export async function ensureDbInitialized(): Promise<Client> {
       }
     }
 
+    // Ensure all wiki categories exist
+    for (const c of MOCK_CATEGORIES) {
+      await db.execute({
+        sql: `INSERT OR IGNORE INTO wiki_categories (id, name, slug, color, icon, description, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          c.id,
+          c.name,
+          c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+          c.color,
+          c.icon,
+          c.description || "",
+          new Date().toISOString(),
+        ],
+      });
+    }
+
     // Check if seeded
     const projectRes = await db.execute("SELECT count(*) as count FROM projects");
     const count = Number(projectRes.rows[0]?.count || 0);
