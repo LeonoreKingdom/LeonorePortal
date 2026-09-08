@@ -3,16 +3,18 @@ import { ProjectItem } from "@/data/mock-projects";
 import { TaskService } from "@/lib/services/task.service";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Portal: "#70db86",
-  Store: "#edb007",
-  Agency: "#e70d2e",
-  Utilities: "#f59e0b",
-  Bots: "#808080",
-  Community: "#ffbc05",
-  Romansa: "#f264e1",
-  Portfolio: "#ec4899",
+  Portfolio: "#6366f1",
+  Portal: "#06b6d4",
+  Store: "#f59e0b",
+  Agency: "#f43f5e",
+  Utilities: "#0ea5e9",
+  Bots: "#8b5cf6",
+  Community: "#f97316",
+  Romansa: "#ec4899",
+  Newsletter: "#14b8a6",
+  Finance: "#10b981",
   Productivity: "#6366f1",
-  Development: "#0ea5e9",
+  Development: "#3b82f6",
 };
 
 export class ProjectService {

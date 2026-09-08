@@ -56,17 +56,19 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
-  Portfolio: "#ec4899",
-  Portal: "#70db86",
-  Store: "#edb007",
-  Agency: "#e70d2e",
-  Utilities: "#f59e0b",
-  Bots: "#808080",
-  Community: "#ffbc05",
-  Romansa: "#f264e1",
+  Portfolio: "#6366f1",
+  Portal: "#06b6d4",
+  Store: "#f59e0b",
+  Agency: "#f43f5e",
+  Utilities: "#0ea5e9",
+  Bots: "#8b5cf6",
+  Community: "#f97316",
+  Romansa: "#ec4899",
+  Newsletter: "#14b8a6",
+  Finance: "#10b981",
   Productivity: "#6366f1",
-  Development: "#f59e0b",
-  Media: "#0ea5e9",
+  Development: "#3b82f6",
+  Media: "#ec4899",
   Design: "#a855f7",
 };
 
