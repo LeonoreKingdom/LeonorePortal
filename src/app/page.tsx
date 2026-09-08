@@ -471,6 +471,14 @@ export default function AppPortalPage() {
     return ["Semua", ...categories.map((c) => c.name)];
   }, [categories]);
 
+  const { categoryRow1, categoryRow2 } = useMemo(() => {
+    const half = Math.ceil(categoryTabList.length / 2);
+    return {
+      categoryRow1: categoryTabList.slice(0, half),
+      categoryRow2: categoryTabList.slice(half),
+    };
+  }, [categoryTabList]);
+
   const categoryColorMap = useMemo(() => {
     const map: Record<string, string> = {
       Portfolio: "#ec4899",
@@ -494,6 +502,36 @@ export default function AppPortalPage() {
     });
     return map;
   }, [categories]);
+
+  const renderCategoryButton = (cat: string) => {
+    const catObj = categories.find((c) => c.name.toLowerCase() === cat.toLowerCase());
+    const catColor = catObj?.color || (cat !== "Semua" ? categoryColorMap[cat] : undefined);
+    const isSelected = selectedCategory === cat;
+    return (
+      <button
+        key={cat}
+        onClick={() => setSelectedCategory(cat)}
+        style={
+          isSelected && catColor
+            ? { backgroundColor: catColor, borderColor: catColor, color: "#ffffff", boxShadow: `0 4px 12px ${catColor}40` }
+            : undefined
+        }
+        className={`whitespace-nowrap rounded-lg px-3 py-1.5 sm:py-2 text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 ${
+          isSelected
+            ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
+            : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800/80"
+        }`}
+      >
+        {catColor && (
+          <span
+            className="h-2 w-2 rounded-full shrink-0"
+            style={{ backgroundColor: catColor }}
+          />
+        )}
+        <span>{cat}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="relative isolate min-h-screen pb-20">
@@ -576,91 +614,73 @@ export default function AppPortalPage() {
           </div>
         )}
 
-        {/* Filter and Search Bar */}
-        <div className="mt-8 sm:mt-10 flex flex-col lg:flex-row items-stretch lg:items-start justify-between gap-3.5 sm:gap-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 flex-1">
-            {/* Search Input */}
-            <div className="flex-1 w-full lg:max-w-lg">
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                totalResults={filteredAndSortedApps.length}
-                totalItems={apps.length}
-              />
-            </div>
+        {/* Filter, Search Bar, and 2-Row Category Tabs */}
+        <div className="mt-8 sm:mt-10 flex flex-col xl:flex-row items-stretch xl:items-start justify-between gap-4">
+          {/* Left Column: Search Bar, Sort Dropdown & Quick Search Suggestions */}
+          <div className="flex flex-col gap-2.5 flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Search Input */}
+              <div className="flex-1 w-full max-w-none sm:max-w-md">
+                <SearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  totalResults={filteredAndSortedApps.length}
+                  totalItems={apps.length}
+                />
+              </div>
 
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-2 self-start w-full sm:w-auto">
-              <div className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2.5 text-xs text-slate-300 w-full sm:w-auto justify-between sm:justify-start">
-                <div className="flex items-center gap-1.5">
-                  <ArrowUpDown className="h-3.5 w-3.5 text-indigo-400" />
-                  <span className="text-slate-500">Urutan:</span>
+              {/* Sort Dropdown */}
+              <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto">
+                <div className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2.5 text-xs text-slate-300 w-full sm:w-auto justify-between sm:justify-start shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-indigo-400" />
+                    <span className="text-slate-500">Urutan:</span>
+                  </div>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="bg-transparent font-medium text-slate-200 focus:outline-none cursor-pointer"
+                  >
+                    <option value="default" className="bg-slate-900 text-slate-200">Default (Utama)</option>
+                    <option value="name-asc" className="bg-slate-900 text-slate-200">Nama (A - Z)</option>
+                    <option value="name-desc" className="bg-slate-900 text-slate-200">Nama (Z - A)</option>
+                    <option value="category" className="bg-slate-900 text-slate-200">Kategori</option>
+                    <option value="status" className="bg-slate-900 text-slate-200">Status</option>
+                  </select>
                 </div>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="bg-transparent font-medium text-slate-200 focus:outline-none cursor-pointer"
-                >
-                  <option value="default" className="bg-slate-900 text-slate-200">Default (Utama)</option>
-                  <option value="name-asc" className="bg-slate-900 text-slate-200">Nama (A - Z)</option>
-                  <option value="name-desc" className="bg-slate-900 text-slate-200">Nama (Z - A)</option>
-                  <option value="category" className="bg-slate-900 text-slate-200">Kategori</option>
-                  <option value="status" className="bg-slate-900 text-slate-200">Status</option>
-                </select>
               </div>
             </div>
+
+            {/* Suggested Quick Searches */}
+            {!searchQuery && !selectedTag && selectedCategory === "Semua" && (
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                <span className="text-[11px]">Saran pencarian:</span>
+                {SUGGESTED_SEARCHES.map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => setSearchQuery(term)}
+                    className="rounded-md bg-slate-900/60 px-2 py-0.5 text-[11px] text-slate-400 hover:bg-slate-800 hover:text-indigo-300 border border-slate-800/60 transition-colors"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Dynamic Category Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none self-start w-full lg:w-auto">
-            {categoryTabList.map((cat) => {
-              const catObj = categories.find((c) => c.name.toLowerCase() === cat.toLowerCase());
-              const catColor = catObj?.color || (cat !== "Semua" ? categoryColorMap[cat] : undefined);
-              const isSelected = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  style={
-                    isSelected && catColor
-                      ? { backgroundColor: catColor, borderColor: catColor, color: "#ffffff", boxShadow: `0 4px 12px ${catColor}40` }
-                      : undefined
-                  }
-                  className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-all flex items-center gap-1.5 ${
-                    isSelected
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
-                      : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800/80"
-                  }`}
-                >
-                  {catColor && (
-                    <span
-                      className="h-2 w-2 rounded-full shrink-0"
-                      style={{ backgroundColor: catColor }}
-                    />
-                  )}
-                  <span>{cat}</span>
-                </button>
-              );
-            })}
+          {/* Right Column: Dynamic Category Tabs - 2 Baris Rapih Tanpa Scroll */}
+          <div className="flex flex-col gap-1.5 self-start w-full xl:w-auto shrink-0">
+            {/* Baris 1 */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {categoryRow1.map((cat) => renderCategoryButton(cat))}
+            </div>
+            {/* Baris 2 */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {categoryRow2.map((cat) => renderCategoryButton(cat))}
+            </div>
           </div>
         </div>
-
-        {/* Suggested Quick Searches */}
-        {!searchQuery && !selectedTag && selectedCategory === "Semua" && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-            <span>Saran pencarian:</span>
-            {SUGGESTED_SEARCHES.map((term) => (
-              <button
-                key={term}
-                type="button"
-                onClick={() => setSearchQuery(term)}
-                className="rounded-md bg-slate-900/60 px-2 py-0.5 text-[11px] text-slate-400 hover:bg-slate-800 hover:text-indigo-300 border border-slate-800/60 transition-colors"
-              >
-                {term}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Active Filters Summary */}
         {(selectedTag || sortBy !== "default" || searchQuery || selectedCategory !== "Semua") && (
