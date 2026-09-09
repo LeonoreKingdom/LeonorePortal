@@ -36,6 +36,32 @@ import { JwtInspectorTool } from "@/components/toolbox/jwt-inspector-tool";
 import { UnixTimestampTool } from "@/components/toolbox/unix-timestamp-tool";
 import { BgRemoverTool } from "@/components/toolbox/bg-remover-tool";
 
+// Newly Added Comprehensive Tools
+import { MarkdownEditorTool } from "@/components/toolbox/markdown-editor-tool";
+import { CaseConverterTool } from "@/components/toolbox/case-converter-tool";
+import { ContentAnalyzerTool } from "@/components/toolbox/content-analyzer-tool";
+import { MockDataGeneratorTool } from "@/components/toolbox/mock-data-generator-tool";
+import { YamlJsonConverterTool } from "@/components/toolbox/yaml-json-converter-tool";
+import { ColorExtractorTool } from "@/components/toolbox/color-extractor-tool";
+import { ExifViewerTool } from "@/components/toolbox/exif-viewer-tool";
+import { SvgOptimizerTool } from "@/components/toolbox/svg-optimizer-tool";
+import { ResponsiveViewerTool } from "@/components/toolbox/responsive-viewer-tool";
+import { TeleprompterTool } from "@/components/toolbox/teleprompter-tool";
+import { InvoiceGeneratorTool } from "@/components/toolbox/invoice-generator-tool";
+import { CompoundInterestTool } from "@/components/toolbox/compound-interest-tool";
+import { HourlyWageTool } from "@/components/toolbox/hourly-wage-tool";
+import { TipCalculatorTool } from "@/components/toolbox/tip-calculator-tool";
+import { MortgageCalculatorTool } from "@/components/toolbox/mortgage-calculator-tool";
+import { PomodoroTimerTool } from "@/components/toolbox/pomodoro-timer-tool";
+import { BaseConverterTool } from "@/components/toolbox/base-converter-tool";
+import { TimezoneOverlapTool } from "@/components/toolbox/timezone-overlap-tool";
+import { TriangleCalculatorTool } from "@/components/toolbox/triangle-calculator-tool";
+import { UrlEncoderTool } from "@/components/toolbox/url-encoder-tool";
+import { Base64ConverterTool } from "@/components/toolbox/base64-converter-tool";
+import { HashCheckerTool } from "@/components/toolbox/hash-checker-tool";
+import { AiPromptSanitizerTool } from "@/components/toolbox/ai-prompt-sanitizer-tool";
+import { CertViewerTool } from "@/components/toolbox/cert-viewer-tool";
+
 import { ToolCard } from "@/components/tool-card";
 
 interface PageProps {
@@ -118,6 +144,54 @@ export default function ToolboxDetailPage({ params }: PageProps) {
         return <QrGeneratorTool />;
       case "password-generator":
         return <PasswordGeneratorTool />;
+      case "markdown-editor":
+        return <MarkdownEditorTool />;
+      case "case-converter":
+        return <CaseConverterTool />;
+      case "content-analyzer":
+        return <ContentAnalyzerTool />;
+      case "mock-data-generator":
+        return <MockDataGeneratorTool />;
+      case "yaml-json-converter":
+        return <YamlJsonConverterTool />;
+      case "color-extractor":
+        return <ColorExtractorTool />;
+      case "exif-viewer":
+        return <ExifViewerTool />;
+      case "svg-optimizer":
+        return <SvgOptimizerTool />;
+      case "responsive-viewer":
+        return <ResponsiveViewerTool />;
+      case "teleprompter":
+        return <TeleprompterTool />;
+      case "invoice-generator":
+        return <InvoiceGeneratorTool />;
+      case "compound-interest":
+        return <CompoundInterestTool />;
+      case "hourly-wage":
+        return <HourlyWageTool />;
+      case "tip-calculator":
+        return <TipCalculatorTool />;
+      case "mortgage-calculator":
+        return <MortgageCalculatorTool />;
+      case "pomodoro-timer":
+        return <PomodoroTimerTool />;
+      case "base-converter":
+        return <BaseConverterTool />;
+      case "timezone-overlap":
+        return <TimezoneOverlapTool />;
+      case "triangle-calculator":
+        return <TriangleCalculatorTool />;
+      case "url-encoder":
+        return <UrlEncoderTool />;
+      case "base64-converter":
+        return <Base64ConverterTool />;
+      case "hash-checker":
+        return <HashCheckerTool />;
+      case "ai-prompt-sanitizer":
+        return <AiPromptSanitizerTool />;
+      case "cert-viewer":
+        return <CertViewerTool />;
       default:
         return (
           <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-10 text-center max-w-xl mx-auto">
