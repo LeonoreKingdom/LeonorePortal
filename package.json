@@ -19,11 +19,13 @@
   },
   "homepage": "https://github.com/LeonoreKingdom/LeonorePortal#readme",
   "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
     "@libsql/client": "^0.18.0",
     "@types/qrcode": "^1.5.6",
     "clsx": "^2.1.1",
     "lucide-react": "^1.39.0",
     "next": "^15.5.25",
+    "onnxruntime-web": "^1.21.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { 
@@ -27,7 +27,9 @@ import {
   FileSpreadsheet,
   TableProperties,
   Regex as RegexIcon,
-  ShieldAlert
+  ShieldAlert,
+  Eraser,
+  Wand2
 } from "lucide-react";
 import { ToolItem, ToolboxCategory } from "@/data/mock-toolbox";
 
@@ -55,6 +57,9 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   TableProperties,
   Regex: RegexIcon,
   ShieldAlert,
+  Eraser,
+  Wand2,
+  Sparkles,
 };
 
 interface ToolCardProps {

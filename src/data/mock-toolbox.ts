@@ -81,6 +81,16 @@ export const TOOLBOX_ITEMS: ToolItem[] = [
 
   // MEDIA TOOLS
   {
+    id: "bg-remover",
+    slug: "bg-remover",
+    name: "AI Background Remover",
+    description: "Hapus latar belakang foto otomatis menggunakan AI atau mode Chroma-Key 100% di browser tanpa upload server.",
+    category: "media",
+    icon: "Eraser",
+    tags: ["AI", "Background Remover", "Transparan", "PNG", "Media", "Client-Side"],
+    isPopular: true,
+  },
+  {
     id: "image-compressor",
     slug: "image-compressor",
     name: "Image Compressor",

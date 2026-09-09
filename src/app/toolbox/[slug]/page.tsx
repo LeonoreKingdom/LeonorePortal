@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, use } from "react";
 import Link from "next/link";
@@ -34,6 +34,7 @@ import { PdfToImageTool } from "@/components/toolbox/pdf-to-image-tool";
 import { RegexTesterTool } from "@/components/toolbox/regex-tester-tool";
 import { JwtInspectorTool } from "@/components/toolbox/jwt-inspector-tool";
 import { UnixTimestampTool } from "@/components/toolbox/unix-timestamp-tool";
+import { BgRemoverTool } from "@/components/toolbox/bg-remover-tool";
 
 import { ToolCard } from "@/components/tool-card";
 
@@ -77,6 +78,8 @@ export default function ToolboxDetailPage({ params }: PageProps) {
         return <TimerStopwatchTool />;
       case "unix-timestamp":
         return <UnixTimestampTool />;
+      case "bg-remover":
+        return <BgRemoverTool />;
       case "image-compressor":
         return <ImageCompressorTool />;
       case "image-converter":
