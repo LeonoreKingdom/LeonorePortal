@@ -12,10 +12,11 @@ import {
   Layers, 
   Check, 
   Eye, 
-  Trash2, 
-  Smartphone, 
+  Pipette,
   FolderArchive,
-  RefreshCw
+  RefreshCw,
+  Info,
+  Maximize2
 } from "lucide-react";
 
 interface BoundingBox {
@@ -112,6 +113,8 @@ function createZip(files: { name: string; data: Uint8Array }[]): Blob {
   ev.setUint16(10, files.length, true); // Total records
   ev.setUint32(12, centralDirSize, true); // Size of CD
   ev.setUint32(16, offset, true); // Offset of CD
+  ev.setUint16(20, 0, true); // Comment length
+
   const totalLength = offset + centralDirSize + 22;
   const mergedZip = new Uint8Array(totalLength);
   let pos = 0;
@@ -136,22 +139,28 @@ for (let i = 0; i < 256; i++) {
 export function StickerCutterTool() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [imgDimensions, setImgDimensions] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-  const [mode, setMode] = useState<"smart" | "grid">("smart");
+  
+  // Slicing Modes: "gutters" (XY-Cut channels - best for sheets), "blobs" (free contour), "grid" (NxM)
+  const [mode, setMode] = useState<"gutters" | "blobs" | "grid">("gutters");
 
   // Detection Parameters
   const [bgColor, setBgColor] = useState<string>("#000000");
-  const [tolerance, setTolerance] = useState<number>(30);
-  const [mergeDistance, setMergeDistance] = useState<number>(24); // Merge proximity for floating text/hearts
-  const [padding, setPadding] = useState<number>(8);
-  const [minSize, setMinSize] = useState<number>(50);
+  const [isTransparentBg, setIsTransparentBg] = useState<boolean>(false);
+  const [tolerance, setTolerance] = useState<number>(25); // Color threshold
+  const [gutterSensitivity, setGutterSensitivity] = useState<number>(2); // 1 - 10%
+  const [mergeDistance, setMergeDistance] = useState<number>(15); // Distance for floating text in blob mode
+  const [padding, setPadding] = useState<number>(6);
+  const [minSize, setMinSize] = useState<number>(40);
 
   // Grid Parameters
-  const [gridCols, setGridCols] = useState<number>(4);
-  const [gridRows, setGridRows] = useState<number>(4);
+  const [gridCols, setGridCols] = useState<number>(3);
+  const [gridRows, setGridRows] = useState<number>(5);
+  const [autoSnapGrid, setAutoSnapGrid] = useState<boolean>(true);
 
   // Processing Options
   const [makeTransparent, setMakeTransparent] = useState<boolean>(true);
-  const [exportPreset, setExportPreset] = useState<"original" | "whatsapp" | "telegram">("whatsapp");
+  const [exportPreset, setExportPreset] = useState<"whatsapp" | "telegram" | "original">("whatsapp");
+  const [isEyedropperActive, setIsEyedropperActive] = useState<boolean>(false);
 
   // Results
   const [boxes, setBoxes] = useState<BoundingBox[]>([]);
@@ -160,41 +169,40 @@ export function StickerCutterTool() {
   const [downloadingZip, setDownloadingZip] = useState<boolean>(false);
 
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const previewImgRef = useRef<HTMLImageElement | null>(null);
 
-  // Load a demo sticker sheet on mount
+  // Load sample demo sheet on mount
   useEffect(() => {
     loadDemoSheet();
   }, []);
 
   const loadDemoSheet = () => {
     const canvas = document.createElement("canvas");
-    canvas.width = 800;
-    canvas.height = 800;
+    canvas.width = 600;
+    canvas.height = 1000;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Solid Black Background
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, 800, 800);
+    // Dark Purple Background
+    ctx.fillStyle = "#120a1a";
+    ctx.fillRect(0, 0, 600, 1000);
 
     const emojis = [
       { text: "Good morning!", icon: "🌸", col: 0, row: 0 },
       { text: "Whattt?", icon: "😲", col: 1, row: 0 },
       { text: "Huh?", icon: "🤔", col: 2, row: 0 },
-      { text: "Reminding you!", icon: "☝️", col: 3, row: 0 },
-      { text: "So sleepy", icon: "😴", col: 0, row: 1 },
-      { text: "Wow!", icon: "✨", col: 1, row: 1 },
-      { text: "Approved!", icon: "👍", col: 2, row: 1 },
-      { text: "Nice!", icon: "🥰", col: 3, row: 1 },
-      { text: "Hey you!", icon: "👋", col: 0, row: 2 },
-      { text: "Achoo!", icon: "🤧", col: 1, row: 2 },
-      { text: "Angry!", icon: "💢", col: 2, row: 2 },
-      { text: "Good night :3", icon: "🌙", col: 3, row: 2 },
-      { text: "Too cuteee", icon: "💖", col: 0, row: 3 },
-      { text: "Cool yet?!", icon: "😎", col: 1, row: 3 },
-      { text: "Wink", icon: "😉", col: 2, row: 3 },
-      { text: "Ehehe", icon: "🤭", col: 3, row: 3 },
+      { text: "Reminding you!", icon: "☝️", col: 0, row: 1 },
+      { text: "So sleepy", icon: "😴", col: 1, row: 1 },
+      { text: "Wow!", icon: "✨", col: 2, row: 1 },
+      { text: "Approved!", icon: "👍", col: 0, row: 2 },
+      { text: "Nice!", icon: "🥰", col: 1, row: 2 },
+      { text: "Hey you!", icon: "👋", col: 2, row: 2 },
+      { text: "Achoo!", icon: "🤧", col: 0, row: 3 },
+      { text: "Angry!", icon: "💢", col: 1, row: 3 },
+      { text: "Huh???", icon: "❓", col: 2, row: 3 },
+      { text: "Good night :3", icon: "🌙", col: 0, row: 4 },
+      { text: "Too cuteee", icon: "💖", col: 1, row: 4 },
+      { text: "Am I cool yet?!", icon: "😎", col: 2, row: 4 },
     ];
 
     emojis.forEach((item) => {
@@ -204,30 +212,33 @@ export function StickerCutterTool() {
       // Draw white sticker die-cut border background
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
-      ctx.roundRect(cx - 65, cy - 65, 130, 130, 32);
+      ctx.roundRect(cx - 65, cy - 65, 130, 130, 28);
       ctx.fill();
 
-      // Draw chibi illustration inner circle
-      ctx.fillStyle = "#1e1b4b";
+      // Inner illustration circle
+      ctx.fillStyle = "#3b0764";
       ctx.beginPath();
       ctx.arc(cx, cy - 10, 42, 0, Math.PI * 2);
       ctx.fill();
 
-      // Emoji character
-      ctx.font = "40px sans-serif";
+      // Emoji
+      ctx.font = "38px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(item.icon, cx, cy - 10);
 
-      // Sticker text label with white outline
-      ctx.font = "bold 13px sans-serif";
+      // Text label
+      ctx.font = "bold 12px sans-serif";
       ctx.fillStyle = "#e11d48";
       ctx.fillText(item.text, cx, cy + 45);
     });
 
     const dataUrl = canvas.toDataURL("image/png");
+    setBgColor("#120a1a");
+    setGridCols(3);
+    setGridRows(5);
     setImageSrc(dataUrl);
-    setImgDimensions({ w: 800, h: 800 });
+    setImgDimensions({ w: 600, h: 1000 });
   };
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -241,29 +252,101 @@ export function StickerCutterTool() {
       img.onload = () => {
         setImgDimensions({ w: img.naturalWidth, h: img.naturalHeight });
         setImageSrc(url);
+        // Auto detect background from perimeter on upload
+        autoDetectBackground(img);
       };
       img.src = url;
     };
     reader.readAsDataURL(file);
   };
 
-  // Auto-detect background color from corners
-  const sampleCornerColor = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    const p1 = ctx.getImageData(2, 2, 1, 1).data;
-    const p2 = ctx.getImageData(w - 3, 2, 1, 1).data;
-    const p3 = ctx.getImageData(2, h - 3, 1, 1).data;
-    const p4 = ctx.getImageData(w - 3, h - 3, 1, 1).data;
+  // Auto-detect dominant background color by sampling outer perimeter
+  const autoDetectBackground = (img: HTMLImageElement) => {
+    const scanCanvas = document.createElement("canvas");
+    scanCanvas.width = 100;
+    scanCanvas.height = 100;
+    const ctx = scanCanvas.getContext("2d");
+    if (!ctx) return;
 
-    // Average corners
-    const r = Math.round((p1[0] + p2[0] + p3[0] + p4[0]) / 4);
-    const g = Math.round((p1[1] + p2[1] + p3[1] + p4[1]) / 4);
-    const b = Math.round((p1[2] + p2[2] + p3[2] + p4[2]) / 4);
-    const hex = "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
-    setBgColor(hex);
-    return { r, g, b };
+    ctx.drawImage(img, 0, 0, 100, 100);
+    const data = ctx.getImageData(0, 0, 100, 100).data;
+
+    let transparentCount = 0;
+    const colorCounts: Record<string, { count: number; r: number; g: number; b: number }> = {};
+
+    const checkPixel = (idx: number) => {
+      const a = data[idx + 3];
+      if (a < 30) {
+        transparentCount++;
+        return;
+      }
+      const r = Math.round(data[idx] / 8) * 8;
+      const g = Math.round(data[idx + 1] / 8) * 8;
+      const b = Math.round(data[idx + 2] / 8) * 8;
+      const key = `${r},${g},${b}`;
+      if (!colorCounts[key]) {
+        colorCounts[key] = { count: 0, r: data[idx], g: data[idx + 1], b: data[idx + 2] };
+      }
+      colorCounts[key].count++;
+    };
+
+    // Sample perimeter borders
+    for (let x = 0; x < 100; x++) {
+      checkPixel((0 * 100 + x) * 4);
+      checkPixel((99 * 100 + x) * 4);
+    }
+    for (let y = 0; y < 100; y++) {
+      checkPixel((y * 100 + 0) * 4);
+      checkPixel((y * 100 + 99) * 4);
+    }
+
+    if (transparentCount > 150) {
+      setIsTransparentBg(true);
+      return;
+    }
+
+    setIsTransparentBg(false);
+    const sorted = Object.values(colorCounts).sort((a, b) => b.count - a.count);
+    if (sorted.length > 0) {
+      const top = sorted[0];
+      const hex = "#" + [top.r, top.g, top.b].map((x) => x.toString(16).padStart(2, "0")).join("");
+      setBgColor(hex);
+    }
   };
 
-  // Run Auto-Detect or Grid Slicing
+  // Eyedropper click on image preview to pick exact background
+  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (!isEyedropperActive || !imgRef.current) return;
+    const target = e.currentTarget;
+    const rect = target.getBoundingClientRect();
+    const clickX = Math.round(((e.clientX - rect.left) / rect.width) * imgDimensions.w);
+    const clickY = Math.round(((e.clientY - rect.top) / rect.height) * imgDimensions.h);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.drawImage(imgRef.current, clickX, clickY, 1, 1, 0, 0, 1, 1);
+    const p = ctx.getImageData(0, 0, 1, 1).data;
+    if (p[3] < 30) {
+      setIsTransparentBg(true);
+    } else {
+      setIsTransparentBg(false);
+      const hex = "#" + [p[0], p[1], p[2]].map((x) => x.toString(16).padStart(2, "0")).join("");
+      setBgColor(hex);
+    }
+    setIsEyedropperActive(false);
+  };
+
+  // Convert hex color to RGB
+  const hexToRgb = (hex: string) => {
+    const num = parseInt(hex.replace("#", ""), 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  };
+
+  // Main Detection Engine
   const detectStickers = () => {
     if (!imageSrc || !imgDimensions.w || !imgDimensions.h) return;
     setIsProcessing(true);
@@ -273,33 +356,9 @@ export function StickerCutterTool() {
     img.onload = () => {
       const w = img.naturalWidth;
       const h = img.naturalHeight;
+      const bgRgb = hexToRgb(bgColor);
 
-      if (mode === "grid") {
-        // Grid Slicing mode
-        const cellW = Math.floor(w / gridCols);
-        const cellH = Math.floor(h / gridRows);
-        const newBoxes: BoundingBox[] = [];
-        let idCounter = 1;
-
-        for (let r = 0; r < gridRows; r++) {
-          for (let c = 0; c < gridCols; c++) {
-            const bx = Math.max(0, c * cellW + padding);
-            const by = Math.max(0, r * cellH + padding);
-            const bw = Math.min(w - bx, cellW - padding * 2);
-            const bh = Math.min(h - by, cellH - padding * 2);
-            if (bw > 10 && bh > 10) {
-              newBoxes.push({ id: idCounter++, x: bx, y: by, w: bw, h: bh, selected: true });
-            }
-          }
-        }
-        setBoxes(newBoxes);
-        sliceAllBoxes(img, newBoxes);
-        setIsProcessing(false);
-        return;
-      }
-
-      // Smart Auto-Detect Blob mode
-      // Downsample for instant scanning
+      // Downsample for speed
       const scale = Math.min(1, 800 / Math.max(w, h));
       const sw = Math.round(w * scale);
       const sh = Math.round(h * scale);
@@ -314,136 +373,328 @@ export function StickerCutterTool() {
       }
 
       sCtx.drawImage(img, 0, 0, sw, sh);
-      const bg = sampleCornerColor(sCtx, sw, sh);
       const sData = sCtx.getImageData(0, 0, sw, sh).data;
 
-      // 1. Create binary foreground mask
+      // 1. Compute Binary Mask (1 = Sticker Foreground, 0 = Background)
       const mask = new Uint8Array(sw * sh);
+      const tolVal = tolerance * 3;
+
       for (let i = 0; i < sData.length; i += 4) {
         const r = sData[i];
         const g = sData[i + 1];
         const b = sData[i + 2];
         const a = sData[i + 3];
 
-        if (a < 20) {
-          mask[i / 4] = 0; // transparent is background
+        if (a < 30) {
+          mask[i / 4] = 0;
           continue;
         }
 
-        const diff = Math.abs(r - bg.r) + Math.abs(g - bg.g) + Math.abs(b - bg.b);
-        mask[i / 4] = diff > tolerance * 3 ? 1 : 0;
+        if (isTransparentBg) {
+          mask[i / 4] = a > 50 ? 1 : 0;
+        } else {
+          const diff = Math.abs(r - bgRgb.r) + Math.abs(g - bgRgb.g) + Math.abs(b - bgRgb.b);
+          mask[i / 4] = diff > tolVal ? 1 : 0;
+        }
       }
 
-      // 2. Connected Component Labeling on downsampled mask
-      const visited = new Uint8Array(sw * sh);
-      const rawBlobs: { minX: number; minY: number; maxX: number; maxY: number; count: number }[] = [];
+      let detectedBoxes: BoundingBox[] = [];
 
-      for (let y = 0; y < sh; y++) {
-        for (let x = 0; x < sw; x++) {
-          const idx = y * sw + x;
-          if (mask[idx] === 1 && visited[idx] === 0) {
-            let minX = x;
-            let maxX = x;
-            let minY = y;
-            let maxY = y;
+      // =========================================================================
+      // METHOD 1: Celah Antar Stiker (XY-Cut / River-Gutter Analysis)
+      // Best for sheets with rows & columns (eliminates any cross-merging!)
+      // =========================================================================
+      if (mode === "gutters") {
+        // Horizontal profile
+        const rowDensity = new Float32Array(sh);
+        for (let y = 0; y < sh; y++) {
+          let count = 0;
+          for (let x = 0; x < sw; x++) {
+            if (mask[y * sw + x] === 1) count++;
+          }
+          rowDensity[y] = count / sw;
+        }
+
+        const rowThreshold = (gutterSensitivity / 100) * 0.8;
+        interface Band { minY: number; maxY: number; }
+        const bands: Band[] = [];
+        let inBand = false;
+        let bandStart = 0;
+
+        for (let y = 0; y < sh; y++) {
+          if (rowDensity[y] > rowThreshold) {
+            if (!inBand) {
+              inBand = true;
+              bandStart = y;
+            }
+          } else {
+            if (inBand) {
+              inBand = false;
+              if (y - bandStart > 18) {
+                bands.push({ minY: bandStart, maxY: y });
+              }
+            }
+          }
+        }
+        if (inBand && sh - bandStart > 18) {
+          bands.push({ minY: bandStart, maxY: sh });
+        }
+
+        // For each horizontal row band, find vertical cuts
+        const rawCells: { minX: number; maxX: number; minY: number; maxY: number }[] = [];
+        const colThreshold = (gutterSensitivity / 100) * 0.8;
+
+        for (const band of bands) {
+          const colDensity = new Float32Array(sw);
+          const bHeight = band.maxY - band.minY;
+          for (let x = 0; x < sw; x++) {
             let count = 0;
+            for (let y = band.minY; y < band.maxY; y++) {
+              if (mask[y * sw + x] === 1) count++;
+            }
+            colDensity[x] = count / bHeight;
+          }
 
-            const queue = [x, y];
-            visited[idx] = 1;
-
-            while (queue.length > 0) {
-              const qy = queue.pop()!;
-              const qx = queue.pop()!;
-              count++;
-
-              if (qx < minX) minX = qx;
-              if (qx > maxX) maxX = qx;
-              if (qy < minY) minY = qy;
-              if (qy > maxY) maxY = qy;
-
-              const neighbors = [
-                [qx + 1, qy],
-                [qx - 1, qy],
-                [qx, qy + 1],
-                [qx, qy - 1],
-              ];
-
-              for (const [nx, ny] of neighbors) {
-                if (nx >= 0 && nx < sw && ny >= 0 && ny < sh) {
-                  const nIdx = ny * sw + nx;
-                  if (mask[nIdx] === 1 && visited[nIdx] === 0) {
-                    visited[nIdx] = 1;
-                    queue.push(nx, ny);
-                  }
+          let inCol = false;
+          let colStart = 0;
+          for (let x = 0; x < sw; x++) {
+            if (colDensity[x] > colThreshold) {
+              if (!inCol) {
+                inCol = true;
+                colStart = x;
+              }
+            } else {
+              if (inCol) {
+                inCol = false;
+                if (x - colStart > 18) {
+                  rawCells.push({ minX: colStart, maxX: x, minY: band.minY, maxY: band.maxY });
                 }
               }
             }
+          }
+          if (inCol && sw - colStart > 18) {
+            rawCells.push({ minX: colStart, maxX: sw, minY: band.minY, maxY: band.maxY });
+          }
+        }
 
-            if (count > 25) {
-              rawBlobs.push({ minX, minY, maxX, maxY, count });
+        // Trim each cell tightly to the actual sticker pixels inside it
+        let idCounter = 1;
+        for (const cell of rawCells) {
+          let cMinX = cell.maxX;
+          let cMaxX = cell.minX;
+          let cMinY = cell.maxY;
+          let cMaxY = cell.minY;
+          let fgCount = 0;
+
+          for (let y = cell.minY; y < cell.maxY; y++) {
+            for (let x = cell.minX; x < cell.maxX; x++) {
+              if (mask[y * sw + x] === 1) {
+                fgCount++;
+                if (x < cMinX) cMinX = x;
+                if (x > cMaxX) cMaxX = x;
+                if (y < cMinY) cMinY = y;
+                if (y > cMaxY) cMaxY = y;
+              }
+            }
+          }
+
+          if (fgCount > 40 && cMaxX > cMinX && cMaxY > cMinY) {
+            const bx = Math.max(0, Math.round(cMinX / scale) - padding);
+            const by = Math.max(0, Math.round(cMinY / scale) - padding);
+            const bw = Math.min(w - bx, Math.round((cMaxX - cMinX) / scale) + padding * 2);
+            const bh = Math.min(h - by, Math.round((cMaxY - cMinY) / scale) + padding * 2);
+
+            if (bw >= minSize && bh >= minSize) {
+              detectedBoxes.push({
+                id: idCounter++,
+                x: bx,
+                y: by,
+                w: bw,
+                h: bh,
+                selected: true,
+              });
             }
           }
         }
       }
 
-      // 3. Proximity Merge: Combine text & hearts that belong to the same sticker
-      const scaledMergeDist = mergeDistance * scale;
-      let merged = [...rawBlobs];
-      let changed = true;
+      // =========================================================================
+      // METHOD 2: Kontur Bebas (CCL with Major/Minor Classification)
+      // =========================================================================
+      else if (mode === "blobs") {
+        const visited = new Uint8Array(sw * sh);
+        const blobs: { minX: number; minY: number; maxX: number; maxY: number; count: number }[] = [];
 
-      while (changed) {
-        changed = false;
-        for (let i = 0; i < merged.length; i++) {
-          for (let j = i + 1; j < merged.length; j++) {
-            const b1 = merged[i];
-            const b2 = merged[j];
+        for (let y = 0; y < sh; y++) {
+          for (let x = 0; x < sw; x++) {
+            const idx = y * sw + x;
+            if (mask[idx] === 1 && visited[idx] === 0) {
+              let minX = x;
+              let maxX = x;
+              let minY = y;
+              let maxY = y;
+              let count = 0;
 
-            const gapX = Math.max(0, Math.max(b1.minX, b2.minX) - Math.min(b1.maxX, b2.maxX));
-            const gapY = Math.max(0, Math.max(b1.minY, b2.minY) - Math.min(b1.maxY, b2.maxY));
+              const queue = [x, y];
+              visited[idx] = 1;
 
-            if (gapX <= scaledMergeDist && gapY <= scaledMergeDist) {
-              b1.minX = Math.min(b1.minX, b2.minX);
-              b1.minY = Math.min(b1.minY, b2.minY);
-              b1.maxX = Math.max(b1.maxX, b2.maxX);
-              b1.maxY = Math.max(b1.maxY, b2.maxY);
-              b1.count += b2.count;
-              merged.splice(j, 1);
-              changed = true;
-              break;
+              while (queue.length > 0) {
+                const qy = queue.pop()!;
+                const qx = queue.pop()!;
+                count++;
+
+                if (qx < minX) minX = qx;
+                if (qx > maxX) maxX = qx;
+                if (qy < minY) minY = qy;
+                if (qy > maxY) maxY = qy;
+
+                const neighbors = [
+                  [qx + 1, qy],
+                  [qx - 1, qy],
+                  [qx, qy + 1],
+                  [qx, qy - 1],
+                ];
+
+                for (const [nx, ny] of neighbors) {
+                  if (nx >= 0 && nx < sw && ny >= 0 && ny < sh) {
+                    const nIdx = ny * sw + nx;
+                    if (mask[nIdx] === 1 && visited[nIdx] === 0) {
+                      visited[nIdx] = 1;
+                      queue.push(nx, ny);
+                    }
+                  }
+                }
+              }
+
+              if (count > 25) {
+                blobs.push({ minX, minY, maxX, maxY, count });
+              }
             }
           }
-          if (changed) break;
         }
+
+        // Separate into Major Stickers and Minor Fragments (e.g. text/hearts)
+        // Two major stickers NEVER merge!
+        const majorThreshold = 400; // pixels in downsampled space
+        const majors = blobs.filter((b) => b.count >= majorThreshold);
+        const minors = blobs.filter((b) => b.count < majorThreshold);
+
+        const scaledMergeDist = mergeDistance * scale;
+
+        // Absorb minor fragments into the nearest major sticker ONLY
+        for (const min of minors) {
+          let closestMajor: { minX: number; minY: number; maxX: number; maxY: number; count: number } | null = null;
+          let minDist = Infinity;
+
+          for (const maj of majors) {
+            const gapX = Math.max(0, Math.max(min.minX, maj.minX) - Math.min(min.maxX, maj.maxX));
+            const gapY = Math.max(0, Math.max(min.minY, maj.minY) - Math.min(min.maxY, maj.maxY));
+            const dist = Math.sqrt(gapX * gapX + gapY * gapY);
+
+            if (dist <= scaledMergeDist && dist < minDist) {
+              minDist = dist;
+              closestMajor = maj;
+            }
+          }
+
+          if (closestMajor) {
+            closestMajor.minX = Math.min(closestMajor.minX, min.minX);
+            closestMajor.minY = Math.min(closestMajor.minY, min.minY);
+            closestMajor.maxX = Math.max(closestMajor.maxX, min.maxX);
+            closestMajor.maxY = Math.max(closestMajor.maxY, min.maxY);
+          }
+        }
+
+        const finalBlobs = majors.length > 0 ? majors : blobs;
+        let idCounter = 1;
+
+        finalBlobs.forEach((b) => {
+          const origMinX = Math.max(0, Math.round(b.minX / scale) - padding);
+          const origMinY = Math.max(0, Math.round(b.minY / scale) - padding);
+          const origMaxX = Math.min(w, Math.round(b.maxX / scale) + padding);
+          const origMaxY = Math.min(h, Math.round(b.maxY / scale) + padding);
+
+          const bw = origMaxX - origMinX;
+          const bh = origMaxY - origMinY;
+
+          if (bw >= minSize && bh >= minSize) {
+            detectedBoxes.push({
+              id: idCounter++,
+              x: origMinX,
+              y: origMinY,
+              w: bw,
+              h: bh,
+              selected: true,
+            });
+          }
+        });
       }
 
-      // 4. Scale back to original dimensions and apply padding & min size filter
-      const detectedBoxes: BoundingBox[] = [];
-      let idCounter = 1;
+      // =========================================================================
+      // METHOD 3: Grid Slicer (NxM) with Auto-Snap to Content
+      // =========================================================================
+      else {
+        const cellW = Math.floor(w / gridCols);
+        const cellH = Math.floor(h / gridRows);
+        let idCounter = 1;
 
-      merged.forEach((b) => {
-        const origMinX = Math.max(0, Math.round(b.minX / scale) - padding);
-        const origMinY = Math.max(0, Math.round(b.minY / scale) - padding);
-        const origMaxX = Math.min(w, Math.round(b.maxX / scale) + padding);
-        const origMaxY = Math.min(h, Math.round(b.maxY / scale) + padding);
+        for (let r = 0; r < gridRows; r++) {
+          for (let c = 0; c < gridCols; c++) {
+            let bx = Math.max(0, c * cellW + padding);
+            let by = Math.max(0, r * cellH + padding);
+            let bw = Math.min(w - bx, cellW - padding * 2);
+            let bh = Math.min(h - by, cellH - padding * 2);
 
-        const bw = origMaxX - origMinX;
-        const bh = origMaxY - origMinY;
+            // Auto-Snap to content inside cell
+            if (autoSnapGrid) {
+              const startX = Math.round(bx * scale);
+              const endX = Math.round((bx + bw) * scale);
+              const startY = Math.round(by * scale);
+              const endY = Math.round((by + bh) * scale);
 
-        if (bw >= minSize && bh >= minSize) {
-          detectedBoxes.push({
-            id: idCounter++,
-            x: origMinX,
-            y: origMinY,
-            w: bw,
-            h: bh,
-            selected: true,
-          });
+              let snapMinX = endX;
+              let snapMaxX = startX;
+              let snapMinY = endY;
+              let snapMaxY = startY;
+              let foundFg = false;
+
+              for (let sy = startY; sy < endY; sy++) {
+                for (let sx = startX; sx < endX; sx++) {
+                  if (sx >= 0 && sx < sw && sy >= 0 && sy < sh && mask[sy * sw + sx] === 1) {
+                    foundFg = true;
+                    if (sx < snapMinX) snapMinX = sx;
+                    if (sx > snapMaxX) snapMaxX = sx;
+                    if (sy < snapMinY) snapMinY = sy;
+                    if (sy > snapMaxY) snapMaxY = sy;
+                  }
+                }
+              }
+
+              if (foundFg && snapMaxX > snapMinX && snapMaxY > snapMinY) {
+                bx = Math.max(0, Math.round(snapMinX / scale) - padding);
+                by = Math.max(0, Math.round(snapMinY / scale) - padding);
+                bw = Math.min(w - bx, Math.round((snapMaxX - snapMinX) / scale) + padding * 2);
+                bh = Math.min(h - by, Math.round((snapMaxY - snapMinY) / scale) + padding * 2);
+              }
+            }
+
+            if (bw > 15 && bh > 15) {
+              detectedBoxes.push({
+                id: idCounter++,
+                x: bx,
+                y: by,
+                w: bw,
+                h: bh,
+                selected: true,
+              });
+            }
+          }
         }
-      });
+      }
 
       // Sort boxes top-to-bottom, left-to-right
       detectedBoxes.sort((a, b) => {
-        if (Math.abs(a.y - b.y) > 40) return a.y - b.y;
+        if (Math.abs(a.y - b.y) > 35) return a.y - b.y;
         return a.x - b.x;
       });
       // Re-index
@@ -459,10 +710,6 @@ export function StickerCutterTool() {
   // Slice individual sticker and perform outer flood-fill transparency
   const sliceAllBoxes = async (img: HTMLImageElement, targetBoxes: BoundingBox[]) => {
     const results: SlicedSticker[] = [];
-    const hexToRgb = (hex: string) => {
-      const num = parseInt(hex.replace("#", ""), 16);
-      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
-    };
     const bgRgb = hexToRgb(bgColor);
 
     for (const box of targetBoxes) {
@@ -478,13 +725,13 @@ export function StickerCutterTool() {
       cCtx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
 
       // If user enabled transparency, run outer border flood fill
-      if (makeTransparent) {
+      if (makeTransparent && !isTransparentBg) {
         const imgData = cCtx.getImageData(0, 0, box.w, box.h);
         const data = imgData.data;
         const visited = new Uint8Array(box.w * box.h);
         const queue: number[] = [];
 
-        // Push border pixels
+        // Push border pixels as seed
         for (let x = 0; x < box.w; x++) {
           queue.push(x, 0);
           queue.push(x, box.h - 1);
@@ -565,12 +812,12 @@ export function StickerCutterTool() {
     setSlicedStickers(results);
   };
 
-  // Re-detect on image change
+  // Re-detect on parameter change
   useEffect(() => {
     if (imageSrc) {
       detectStickers();
     }
-  }, [imageSrc, mode, tolerance, mergeDistance, padding, minSize, gridCols, gridRows, makeTransparent, exportPreset]);
+  }, [imageSrc, mode, tolerance, gutterSensitivity, mergeDistance, padding, minSize, gridCols, gridRows, autoSnapGrid, bgColor, isTransparentBg, makeTransparent, exportPreset]);
 
   // Toggle single box selection
   const toggleBox = (id: number) => {
@@ -657,15 +904,15 @@ export function StickerCutterTool() {
         <div className="mt-5 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-950 border border-slate-800">
             <button
-              onClick={() => setMode("smart")}
+              onClick={() => setMode("gutters")}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                mode === "smart"
+                mode === "gutters"
                   ? "bg-indigo-600 text-white shadow-md"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Deteksi Kontur Otomatis (Smart Blob)</span>
+              <Scissors className="h-3.5 w-3.5" />
+              <span>Auto Celah / Gutters (Sangat Akurat)</span>
             </button>
             <button
               onClick={() => setMode("grid")}
@@ -676,7 +923,18 @@ export function StickerCutterTool() {
               }`}
             >
               <Grid3X3 className="h-3.5 w-3.5" />
-              <span>Mode Grid Slicer (Kolom × Baris)</span>
+              <span>Grid Slicer (NxM)</span>
+            </button>
+            <button
+              onClick={() => setMode("blobs")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                mode === "blobs"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>Kontur Bebas (Blobs)</span>
             </button>
           </div>
 
@@ -698,28 +956,225 @@ export function StickerCutterTool() {
 
       {/* Control Sliders Panel */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+        <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-slate-300">
           <span className="flex items-center gap-2">
             <Sliders className="h-4 w-4 text-pink-400" />
-            Pengaturan Parameter Pemotongan ({mode === "smart" ? "Mode Otomatis" : "Mode Grid"})
+            Parameter Pemotongan & Warna Background
           </span>
 
-          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={makeTransparent}
-              onChange={(e) => setMakeTransparent(e.target.checked)}
-              className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-0"
-            />
-            Transparankan Background Luar (Flood-Fill)
-          </label>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsEyedropperActive(!isEyedropperActive)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-colors ${
+                isEyedropperActive
+                  ? "bg-pink-600 text-white border-pink-500 animate-pulse"
+                  : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white"
+              }`}
+            >
+              <Pipette className="h-3.5 w-3.5" />
+              <span>{isEyedropperActive ? "Klik Titik Background pada Gambar..." : "Pipet Warna Background"}</span>
+            </button>
+
+            <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={makeTransparent}
+                onChange={(e) => setMakeTransparent(e.target.checked)}
+                className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-0"
+              />
+              Transparankan Background Luar (Flood-Fill)
+            </label>
+          </div>
         </div>
 
-        {mode === "smart" ? (
+        {/* Mode Specific Controls */}
+        {mode === "gutters" && (
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
-            {/* Background Color Picker */}
+            {/* Background Color */}
             <div>
               <label className="text-slate-400 block mb-1">Warna Background Sheet</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={bgColor}
+                  onChange={(e) => {
+                    setBgColor(e.target.value);
+                    setIsTransparentBg(false);
+                  }}
+                  className="h-8 w-12 rounded-lg bg-transparent cursor-pointer border border-slate-700"
+                />
+                <span className="font-mono text-white font-bold">{bgColor}</span>
+              </div>
+            </div>
+
+            {/* Tolerance */}
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-slate-400">Toleransi Warna</span>
+                <span className="font-mono text-white font-bold">{tolerance}</span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={70}
+                value={tolerance}
+                onChange={(e) => setTolerance(Number(e.target.value))}
+                className="w-full accent-pink-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Gutter Sensitivity */}
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-slate-400">Ambang Celah Pemisah</span>
+                <span className="font-mono text-white font-bold">{gutterSensitivity}%</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={15}
+                step={0.5}
+                value={gutterSensitivity}
+                onChange={(e) => setGutterSensitivity(Number(e.target.value))}
+                className="w-full accent-indigo-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Padding */}
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-slate-400">Padding Margin Kotak</span>
+                <span className="font-mono text-white font-bold">{padding}px</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={30}
+                value={padding}
+                onChange={(e) => setPadding(Number(e.target.value))}
+                className="w-full accent-emerald-500 cursor-pointer"
+              />
+            </div>
+          </div>
+        )}
+
+        {mode === "grid" && (
+          <div className="space-y-4 text-xs">
+            {/* Quick Presets */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-slate-400 font-semibold">Preset Cepat:</span>
+              <button
+                onClick={() => { setGridCols(3); setGridRows(5); }}
+                className={`px-3 py-1 rounded-xl font-medium border transition-colors ${
+                  gridCols === 3 && gridRows === 5
+                    ? "bg-pink-600 text-white border-pink-500"
+                    : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white"
+                }`}
+              >
+                3 × 5 (15 Stiker)
+              </button>
+              <button
+                onClick={() => { setGridCols(4); setGridRows(4); }}
+                className={`px-3 py-1 rounded-xl font-medium border transition-colors ${
+                  gridCols === 4 && gridRows === 4
+                    ? "bg-pink-600 text-white border-pink-500"
+                    : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white"
+                }`}
+              >
+                4 × 4 (16 Stiker)
+              </button>
+              <button
+                onClick={() => { setGridCols(3); setGridRows(4); }}
+                className={`px-3 py-1 rounded-xl font-medium border transition-colors ${
+                  gridCols === 3 && gridRows === 4
+                    ? "bg-pink-600 text-white border-pink-500"
+                    : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white"
+                }`}
+              >
+                3 × 4 (12 Stiker)
+              </button>
+              <button
+                onClick={() => { setGridCols(4); setGridRows(5); }}
+                className={`px-3 py-1 rounded-xl font-medium border transition-colors ${
+                  gridCols === 4 && gridRows === 5
+                    ? "bg-pink-600 text-white border-pink-500"
+                    : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white"
+                }`}
+              >
+                4 × 5 (20 Stiker)
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              {/* Grid Columns */}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-400">Kolom (Horizontal)</span>
+                  <span className="font-mono text-white font-bold">{gridCols} Kolom</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  value={gridCols}
+                  onChange={(e) => setGridCols(Number(e.target.value))}
+                  className="w-full accent-indigo-500 cursor-pointer"
+                />
+              </div>
+
+              {/* Grid Rows */}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-400">Baris (Vertikal)</span>
+                  <span className="font-mono text-white font-bold">{gridRows} Baris</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  value={gridRows}
+                  onChange={(e) => setGridRows(Number(e.target.value))}
+                  className="w-full accent-indigo-500 cursor-pointer"
+                />
+              </div>
+
+              {/* Grid Inset Padding */}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-400">Padding Kotak</span>
+                  <span className="font-mono text-white font-bold">{padding}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={30}
+                  value={padding}
+                  onChange={(e) => setPadding(Number(e.target.value))}
+                  className="w-full accent-emerald-500 cursor-pointer"
+                />
+              </div>
+
+              {/* Auto-Snap Toggle */}
+              <div className="flex items-center pt-3">
+                <label className="flex items-center gap-2 text-slate-300 cursor-pointer font-medium">
+                  <input
+                    type="checkbox"
+                    checked={autoSnapGrid}
+                    onChange={(e) => setAutoSnapGrid(e.target.checked)}
+                    className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-0"
+                  />
+                  <span>Auto-Snap Pas ke Kontur Stiker</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mode === "blobs" && (
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+            {/* Background Color */}
+            <div>
+              <label className="text-slate-400 block mb-1">Warna Background</label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -735,7 +1190,7 @@ export function StickerCutterTool() {
             <div>
               <div className="flex justify-between mb-1">
                 <span className="text-slate-400">Toleransi Warna</span>
-                <span className="font-mono text-white">{tolerance}</span>
+                <span className="font-mono text-white font-bold">{tolerance}</span>
               </div>
               <input
                 type="range"
@@ -747,16 +1202,16 @@ export function StickerCutterTool() {
               />
             </div>
 
-            {/* Merge Proximity Distance */}
+            {/* Merge Distance */}
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-slate-400">Jarak Gabung Teks/Hati</span>
-                <span className="font-mono text-white">{mergeDistance}px</span>
+                <span className="text-slate-400">Jarak Gabung Teks (Hanya Elemen Kecil)</span>
+                <span className="font-mono text-white font-bold">{mergeDistance}px</span>
               </div>
               <input
                 type="range"
                 min={5}
-                max={50}
+                max={40}
                 value={mergeDistance}
                 onChange={(e) => setMergeDistance(Number(e.target.value))}
                 className="w-full accent-indigo-500 cursor-pointer"
@@ -767,57 +1222,7 @@ export function StickerCutterTool() {
             <div>
               <div className="flex justify-between mb-1">
                 <span className="text-slate-400">Padding Margin</span>
-                <span className="font-mono text-white">{padding}px</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={30}
-                value={padding}
-                onChange={(e) => setPadding(Number(e.target.value))}
-                className="w-full accent-emerald-500 cursor-pointer"
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            {/* Grid Columns */}
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-slate-400">Jumlah Kolom (Horizontal)</span>
-                <span className="font-mono text-white font-bold">{gridCols} Kolom</span>
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={10}
-                value={gridCols}
-                onChange={(e) => setGridCols(Number(e.target.value))}
-                className="w-full accent-indigo-500 cursor-pointer"
-              />
-            </div>
-
-            {/* Grid Rows */}
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-slate-400">Jumlah Baris (Vertikal)</span>
-                <span className="font-mono text-white font-bold">{gridRows} Baris</span>
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={10}
-                value={gridRows}
-                onChange={(e) => setGridRows(Number(e.target.value))}
-                className="w-full accent-indigo-500 cursor-pointer"
-              />
-            </div>
-
-            {/* Grid Inset Padding */}
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-slate-400">Padding Inset Kotak</span>
-                <span className="font-mono text-white">{padding}px</span>
+                <span className="font-mono text-white font-bold">{padding}px</span>
               </div>
               <input
                 type="range"
@@ -838,24 +1243,36 @@ export function StickerCutterTool() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
             <span className="text-slate-300 font-semibold flex items-center gap-2">
               <Eye className="h-4 w-4 text-sky-400" />
-              Pratinjau Lembar Potongan ({boxes.filter((b) => b.selected).length} Stiker Aktif)
+              Pratinjau Lembar Potongan ({boxes.filter((b) => b.selected).length} dari {boxes.length} Stiker Terdeteksi)
             </span>
-            <span className="text-slate-500 italic">
-              Klik pada kotak angka untuk memilih / mengecualikan stiker tertentu
-            </span>
+            <div className="flex items-center gap-3 text-slate-400">
+              <button
+                onClick={detectStickers}
+                className="text-indigo-400 hover:underline flex items-center gap-1 font-medium"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Deteksi Ulang
+              </button>
+              <span>&bull;</span>
+              <span className="italic">Klik kotak nomor stiker untuk mematikan/mengaktifkan</span>
+            </div>
           </div>
 
           {/* Interactive Scaled Overlay Canvas Frame */}
-          <div className="relative rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center p-2 max-h-[550px]">
-            <div className="relative inline-block max-h-[500px]">
+          <div className="relative rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center p-3 max-h-[600px]">
+            <div className="relative inline-block max-h-[550px]">
               <img
+                ref={previewImgRef}
                 src={imageSrc}
                 alt="Sticker Sheet"
-                className="max-h-[500px] w-auto object-contain rounded-xl block pointer-events-none"
+                onClick={handleImageClick}
+                className={`max-h-[550px] w-auto object-contain rounded-xl block ${
+                  isEyedropperActive ? "cursor-crosshair ring-2 ring-pink-500" : ""
+                }`}
               />
 
               {/* Overlaid bounding box rectangles */}
-              {imgDimensions.w > 0 &&
+              {!isEyedropperActive &&
+                imgDimensions.w > 0 &&
                 boxes.map((box) => {
                   const leftPct = (box.x / imgDimensions.w) * 100;
                   const topPct = (box.y / imgDimensions.h) * 100;
@@ -866,10 +1283,10 @@ export function StickerCutterTool() {
                     <div
                       key={box.id}
                       onClick={() => toggleBox(box.id)}
-                      className={`absolute cursor-pointer transition-all duration-150 border-2 rounded-lg flex items-start justify-start p-1 ${
+                      className={`absolute cursor-pointer transition-all duration-150 border-2 rounded-lg flex items-start justify-start p-1 select-none ${
                         box.selected
-                          ? "border-pink-500 bg-pink-500/15 hover:bg-pink-500/25"
-                          : "border-slate-600/40 bg-slate-950/60 opacity-40 hover:opacity-80"
+                          ? "border-pink-500 bg-pink-500/20 hover:bg-pink-500/30 shadow-[0_0_12px_rgba(236,72,153,0.3)]"
+                          : "border-slate-600/40 bg-slate-950/60 opacity-30 hover:opacity-70"
                       }`}
                       style={{
                         left: `${leftPct}%`,
@@ -877,10 +1294,10 @@ export function StickerCutterTool() {
                         width: `${widthPct}%`,
                         height: `${heightPct}%`,
                       }}
-                      title={`Stiker #${box.id} (${box.w}x${box.h}px) - Klik untuk ${box.selected ? "nonaktifkan" : "aktifkan"}`}
+                      title={`Stiker #${box.id} (${box.w}×${box.h}px) - Klik untuk ${box.selected ? "nonaktifkan" : "aktifkan"}`}
                     >
                       <span
-                        className={`text-[9px] font-bold px-1 rounded shadow-sm ${
+                        className={`text-[10px] font-black px-1.5 py-0.5 rounded shadow-md ${
                           box.selected ? "bg-pink-600 text-white" : "bg-slate-700 text-slate-300"
                         }`}
                       >
@@ -921,7 +1338,7 @@ export function StickerCutterTool() {
 
         {/* Gallery Grid */}
         {slicedStickers.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
             {slicedStickers.map((stk) => (
               <div
                 key={stk.id}
@@ -959,7 +1376,7 @@ export function StickerCutterTool() {
         ) : (
           <div className="p-10 rounded-2xl border border-dashed border-slate-800 text-center text-slate-500">
             <Scissors className="h-8 w-8 mx-auto mb-2 opacity-40 animate-pulse" />
-            <p className="text-xs">Tidak ada stiker yang terdeteksi. Sesuaikan slider toleransi atau pilih mode Grid Slicer.</p>
+            <p className="text-xs">Tidak ada stiker yang terdeteksi. Silakan coba mode Celah / Gutters atau sesuaikan preset Grid Slicer.</p>
           </div>
         )}
       </div>
