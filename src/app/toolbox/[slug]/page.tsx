@@ -61,6 +61,7 @@ import { Base64ConverterTool } from "@/components/toolbox/base64-converter-tool"
 import { HashCheckerTool } from "@/components/toolbox/hash-checker-tool";
 import { AiPromptSanitizerTool } from "@/components/toolbox/ai-prompt-sanitizer-tool";
 import { CertViewerTool } from "@/components/toolbox/cert-viewer-tool";
+import { StickerCutterTool } from "@/components/toolbox/sticker-cutter-tool";
 
 import { ToolCard } from "@/components/tool-card";
 
@@ -192,6 +193,8 @@ export default function ToolboxDetailPage({ params }: PageProps) {
         return <AiPromptSanitizerTool />;
       case "cert-viewer":
         return <CertViewerTool />;
+      case "sticker-cutter":
+        return <StickerCutterTool />;
       default:
         return (
           <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-10 text-center max-w-xl mx-auto">

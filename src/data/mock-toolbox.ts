@@ -174,6 +174,16 @@ export const TOOLBOX_ITEMS: ToolItem[] = [
     isPopular: true,
   },
   {
+    id: "sticker-cutter",
+    slug: "sticker-cutter",
+    name: "Sticker Pack Auto-Cutter",
+    description: "Potong otomatis lembar stiker pack menjadi stiker transparan individual siap pakai untuk WhatsApp & Telegram.",
+    category: "media",
+    icon: "Scissors",
+    tags: ["Sticker", "Auto-Cut", "Crop", "WhatsApp", "PNG", "Media", "Client-Side"],
+    isPopular: true,
+  },
+  {
     id: "color-extractor",
     slug: "color-extractor",
     name: "Image Color Palette Extractor",

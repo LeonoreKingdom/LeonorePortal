@@ -48,7 +48,8 @@ import {
   Triangle,
   Link as LinkIcon,
   Hash,
-  FileCheck
+  FileCheck,
+  Scissors
 } from "lucide-react";
 import { ToolItem, ToolboxCategory } from "@/data/mock-toolbox";
 
@@ -99,6 +100,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Link: LinkIcon,
   Hash,
   FileCheck,
+  Scissors,
 };
 
 interface ToolCardProps {
