@@ -1,14 +1,15 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow static assets, favicon, auth endpoints, and root "/"
+  // Allow static assets, favicon, auth endpoints, public portal queries, and root "/"
   if (
     pathname === "/" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
-    pathname === "/favicon.ico"
+    pathname === "/favicon.ico" ||
+    (request.method === "GET" && (pathname === "/api/apps" || pathname === "/api/portal-categories"))
   ) {
     return NextResponse.next();
   }
