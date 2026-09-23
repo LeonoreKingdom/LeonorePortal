@@ -3,12 +3,13 @@ import { AppItem, MOCK_APPS } from "@/data/mock-apps";
 
 export class AppService {
   static async getAllApps(): Promise<AppItem[]> {
-    const db = await ensureDbInitialized();
-    const res = await db.execute("SELECT * FROM portal_apps ORDER BY sort_order ASC, created_at ASC");
+    try {
+      const db = await ensureDbInitialized();
+      const res = await db.execute("SELECT * FROM portal_apps ORDER BY sort_order ASC, created_at ASC");
 
-    if (res.rows.length === 0) {
-      return [];
-    }
+      if (res.rows.length === 0) {
+        return MOCK_APPS;
+      }
 
     return res.rows.map((r: any) => {
       let parsedTags: string[] = [];
@@ -40,6 +41,10 @@ export class AppService {
         isPinned: Boolean(r.is_favorite || r.is_pinned || r.isPinned),
       };
     });
+    } catch (err) {
+      console.error("AppService.getAllApps DB error, falling back to MOCK_APPS:", err);
+      return MOCK_APPS;
+    }
   }
 
   static async getAppById(id: string): Promise<AppItem | null> {

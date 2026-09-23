@@ -18,7 +18,7 @@ import {
   GripVertical,
   Star
 } from "lucide-react";
-import { AppItem } from "@/data/mock-apps";
+import { AppItem, MOCK_APPS } from "@/data/mock-apps";
 import { AppCard } from "@/components/app-card";
 import { SearchBar } from "@/components/search-bar";
 import { useAuth } from "@/components/auth-provider";
@@ -52,9 +52,9 @@ export default function AppPortalPage() {
   const [sortBy, setSortBy] = useState<SortOption>("default");
 
   // Real-time Database Data
-  const [apps, setApps] = useState<AppItem[]>([]);
+  const [apps, setApps] = useState<AppItem[]>(MOCK_APPS);
   const [categories, setCategories] = useState<PortalCategory[]>(DEFAULT_CATEGORIES);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Admin App Editing States
   const [editingApp, setEditingApp] = useState<Partial<AppItem> | null>(null);
