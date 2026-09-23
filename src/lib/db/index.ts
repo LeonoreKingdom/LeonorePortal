@@ -232,6 +232,29 @@ export async function ensureDbInitialized(): Promise<Client> {
       await seedDatabase(db);
     }
 
+    // Ensure all default apps from MOCK_APPS exist in portal_apps (e.g. newly introduced apps like AnimeKu)
+    for (const app of MOCK_APPS) {
+      await db.execute({
+        sql: `INSERT OR IGNORE INTO portal_apps (id, title, description, url, category, icon, color, status, is_internal, is_favorite, tags, sort_order, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          app.id,
+          app.name,
+          app.description,
+          app.url,
+          app.category,
+          app.icon,
+          "#6366f1",
+          app.status,
+          app.url.startsWith("/") ? 1 : 0,
+          app.isPinned ? 1 : 0,
+          JSON.stringify(app.tags),
+          app.sortOrder,
+          new Date().toISOString(),
+        ],
+      });
+    }
+
     initialized = true;
   } catch (err) {
     console.error("Database initialization error:", err);

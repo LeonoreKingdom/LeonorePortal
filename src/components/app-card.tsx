@@ -29,6 +29,10 @@ import {
   Compass,
   Star,
   GripVertical,
+  Tv,
+  Film,
+  Play,
+  Video,
 } from "lucide-react";
 import { AppItem } from "@/data/mock-apps";
 import { cn } from "@/lib/utils";
@@ -53,6 +57,10 @@ const ICON_MAP: Record<string, any> = {
   CheckCircle2,
   KeyRound,
   Compass,
+  Tv,
+  Film,
+  Play,
+  Video,
 };
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {

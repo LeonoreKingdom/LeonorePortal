@@ -108,4 +108,16 @@ export const MOCK_APPS: AppItem[] = [
     tags: ["Palette", "CSS", "UI"],
     isPinned: false,
   },
+  {
+    id: "app-animeku",
+    name: "AnimeKu",
+    description: "Platform streaming & katalog anime personal bergaya Netflix dengan rak kategori, pembaruan episode harian, dan subtitle Indonesia.",
+    url: "https://animeku-beige.vercel.app",
+    icon: "Tv",
+    category: "Media",
+    status: "active",
+    sortOrder: 9,
+    tags: ["Anime", "Streaming", "Next.js", "Media"],
+    isPinned: true,
+  },
 ];
