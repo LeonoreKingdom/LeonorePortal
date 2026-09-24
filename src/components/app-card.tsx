@@ -33,6 +33,10 @@ import {
   Film,
   Play,
   Video,
+  Mic,
+  Music,
+  Music2,
+  Headphones,
 } from "lucide-react";
 import { AppItem } from "@/data/mock-apps";
 import { cn } from "@/lib/utils";
@@ -61,6 +65,10 @@ const ICON_MAP: Record<string, any> = {
   Film,
   Play,
   Video,
+  Mic,
+  Music,
+  Music2,
+  Headphones,
 };
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {

@@ -120,4 +120,16 @@ export const MOCK_APPS: AppItem[] = [
     tags: ["Anime", "Streaming", "Next.js", "Media"],
     isPinned: true,
   },
+  {
+    id: "app-karaoke",
+    name: "Karaoke",
+    description: "Panggung karaoke digital berbasis web dengan pemutar video YouTube karaoke, antrean lagu, katalog musik, dan koleksi favorit.",
+    url: "https://karaoke.leonorekingdom.xyz",
+    icon: "Mic",
+    category: "Media",
+    status: "active",
+    sortOrder: 10,
+    tags: ["Karaoke", "YouTube", "Next.js", "Media"],
+    isPinned: true,
+  },
 ];
