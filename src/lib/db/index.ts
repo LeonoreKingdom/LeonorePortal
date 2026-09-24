@@ -255,6 +255,9 @@ export async function ensureDbInitialized(): Promise<Client> {
       });
     }
 
+    // Purge any legacy internal mock apps (toolbox, kanban, wiki, etc.)
+    await db.execute("DELETE FROM portal_apps WHERE url LIKE '/%' OR id IN ('app-1', 'app-2', 'app-3', 'app-4', 'app-5', 'app-6', 'app-7', 'app-8')");
+
     initialized = true;
   } catch (err) {
     console.error("Database initialization error:", err);

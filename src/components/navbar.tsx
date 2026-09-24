@@ -5,26 +5,17 @@ import { usePathname } from "next/navigation";
 import { 
   Sparkles, 
   LayoutGrid, 
-  Wrench, 
-  KanbanSquare, 
-  BookOpen, 
-  FolderSync, 
   Menu, 
   X,
   Users,
   LogOut,
   User as UserIcon,
-  ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 
 const BASE_NAV_ITEMS = [
   { label: "App Portal", href: "/", icon: LayoutGrid },
-  { label: "Projects", href: "/projects", icon: KanbanSquare },
-  { label: "Knowledge Base", href: "/knowledge-base", icon: BookOpen },
-  { label: "Toolbox", href: "/toolbox", icon: Wrench },
-  { label: "Obsidian Sync", href: "/obsidian-sync", icon: FolderSync },
 ];
 
 export function Navbar() {
