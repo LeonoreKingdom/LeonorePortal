@@ -216,4 +216,16 @@ export const MOCK_APPS: AppItem[] = [
     tags: ["Karaoke", "YouTube", "Next.js", "Media"],
     isPinned: true,
   },
+  {
+    id: "app-happytaste",
+    name: "HappyTaste",
+    description: "Platform restoran & kuliner modern HappyTaste untuk eksplorasi menu, promo spesial, reservasi meja, pemesanan makanan, dan program loyalitas member.",
+    url: "https://happytaste.leonorekingdom.xyz",
+    icon: "Utensils",
+    category: "Store",
+    status: "active",
+    sortOrder: 18,
+    tags: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Turso / SQLite"],
+    isPinned: true,
+  },
 ];

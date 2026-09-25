@@ -37,6 +37,8 @@ import {
   Music,
   Music2,
   Headphones,
+  Utensils,
+  ChefHat,
 } from "lucide-react";
 import { AppItem } from "@/data/mock-apps";
 import { cn } from "@/lib/utils";
@@ -69,6 +71,8 @@ const ICON_MAP: Record<string, any> = {
   Music,
   Music2,
   Headphones,
+  Utensils,
+  ChefHat,
 };
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
