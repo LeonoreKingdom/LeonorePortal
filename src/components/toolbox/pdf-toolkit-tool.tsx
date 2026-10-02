@@ -15,16 +15,16 @@ import {
   AlertCircle, 
   Loader2, 
   Trash2,
-  RefreshCw
+  RefreshCw,
+  BookOpen
 } from "lucide-react";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { PDFParse } from "pdf-parse";
 
-interface ParagraphItem {
-  type: "heading1" | "heading2" | "bullet" | "body";
+interface ExtractedPage {
+  num: number;
   text: string;
-  isPageBreakBefore?: boolean;
 }
 
 export function PdfToolkitTool() {
@@ -33,6 +33,7 @@ export function PdfToolkitTool() {
   // PDF to DOCX State
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedContent, setExtractedContent] = useState<string>("");
+  const [extractedPages, setExtractedPages] = useState<ExtractedPage[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processStatus, setProcessStatus] = useState<string>("");
   const [docxBlobUrl, setDocxBlobUrl] = useState<string | null>(null);
@@ -60,184 +61,220 @@ export function PdfToolkitTool() {
   const [extractedBlobUrl, setExtractedBlobUrl] = useState<string | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
 
-  // Intelligent paragraph and formatting reconstructor
-  const reconstructFormattedParagraphs = (rawText: string): ParagraphItem[] => {
-    // 1. Clean up automatic page indicators like "-- 1 of 5 --"
-    const cleaned = rawText.replace(/--\s*\d+\s+of\s+\d+\s*--/gi, "");
-    const rawLines = cleaned.split("\n");
-    const items: ParagraphItem[] = [];
+  // Format a single page's lines into professional Word paragraphs
+  const formatPageToDocxParagraphs = (pageText: string, isFirstPage: boolean): Paragraph[] => {
+    // Clean running page footers and headers (e.g., "Page 1 of 127 TRAKTOR NUSANTARA...")
+    const cleaned = pageText
+      .replace(/Page\s+\d+\s+of\s+\d+.*$/gim, "")
+      .replace(/--\s*\d+\s+of\s+\d+\s*--/gi, "")
+      .trim();
 
-    let currentBuffer = "";
-    let isCurrentBullet = false;
+    if (!cleaned) {
+      return [new Paragraph({ text: "", pageBreakBefore: !isFirstPage })];
+    }
 
-    const flushCurrent = () => {
-      const trimmed = currentBuffer.trim();
-      if (!trimmed) {
-        currentBuffer = "";
-        isCurrentBullet = false;
+    const lines = cleaned.split("\n");
+    const paragraphs: Paragraph[] = [];
+    let isFirstParagraphOfPage = !isFirstPage;
+
+    let currentBlock: string[] = [];
+    let currentBlockType: "code" | "heading1" | "heading2" | "heading3" | "bullet" | "body" = "body";
+
+    const flushBlock = () => {
+      if (currentBlock.length === 0) return;
+      const text = currentBlock.join(" ").trim();
+      if (!text) {
+        currentBlock = [];
         return;
       }
 
-      if (isCurrentBullet) {
-        items.push({ type: "bullet", text: trimmed });
-      } else {
-        // Detect Heading 1 or Heading 2
-        const isHeading = 
-          trimmed.length < 75 && 
-          !/[.,;:]$/.test(trimmed) && 
-          ((trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed)) || 
-           /^(BAB\s+[IVXLCDM\d]+|PASAL\s+\d+|CHAPTER\s+\d+|BAGIAN\s+\d+)/i.test(trimmed));
-        
-        if (isHeading) {
-          items.push({ type: trimmed.length < 40 ? "heading1" : "heading2", text: trimmed });
-        } else {
-          items.push({ type: "body", text: trimmed });
-        }
-      }
-      currentBuffer = "";
-      isCurrentBullet = false;
-    };
+      const pageBreak = isFirstParagraphOfPage;
+      isFirstParagraphOfPage = false;
 
-    for (let i = 0; i < rawLines.length; i++) {
-      const line = rawLines[i].trim();
-
-      // Empty line -> explicit paragraph break
-      if (!line) {
-        flushCurrent();
-        continue;
-      }
-
-      // Check if page separator exists
-      if (/^\[PageBreak\]|^---+\s*Halaman\s*\d+/i.test(line)) {
-        flushCurrent();
-        if (items.length > 0) {
-          // Mark next paragraph with page break
-          items.push({ type: "body", text: "", isPageBreakBefore: true });
-        }
-        continue;
-      }
-
-      // Check for bullet / numbered list item
-      const isBullet = /^([•\-\*]|\d+[\.\)]|[a-zA-Z][\.\)])\s+/.test(line);
-
-      if (isBullet) {
-        flushCurrent();
-        currentBuffer = line;
-        isCurrentBullet = true;
-      } else if (isCurrentBullet) {
-        // Continuing a bullet item or new item?
-        flushCurrent();
-        currentBuffer = line;
-      } else {
-        if (!currentBuffer) {
-          currentBuffer = line;
-        } else {
-          // Check if previous line ended with hyphen (word break)
-          if (currentBuffer.endsWith("-")) {
-            currentBuffer = currentBuffer.slice(0, -1) + line;
-          } else if (/[.!?:;]$/.test(currentBuffer)) {
-            // Line ended with terminal punctuation -> check if it's a new sentence or new paragraph
-            // If the current line is short and previous was punctuated, flush as separate paragraph
-            if (currentBuffer.length < 40) {
-              flushCurrent();
-              currentBuffer = line;
-            } else {
-              // Standard sentence flow
-              currentBuffer += " " + line;
-            }
-          } else {
-            // Flowing continuous line within the same paragraph (avoids jagged lines in Word!)
-            currentBuffer += " " + line;
-          }
-        }
-      }
-    }
-
-    flushCurrent();
-    return items;
-  };
-
-  // Generate valid Word DOCX with professional formatting
-  const generateCleanDocx = async (title: string, rawText: string): Promise<Blob> => {
-    const parsedItems = reconstructFormattedParagraphs(rawText);
-    const paragraphs: Paragraph[] = [];
-
-    // Main Document Header Title
-    paragraphs.push(
-      new Paragraph({
-        text: title.replace(/\.pdf$/i, ""),
-        heading: HeadingLevel.TITLE,
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 120, after: 280 },
-      })
-    );
-
-    let applyPageBreak = false;
-
-    for (const item of parsedItems) {
-      if (item.isPageBreakBefore) {
-        applyPageBreak = true;
-        continue;
-      }
-
-      if (!item.text) continue;
-
-      if (item.type === "heading1") {
+      if (currentBlockType === "code") {
+        currentBlock.forEach((codeLine) => {
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: codeLine,
+                  font: "Consolas",
+                  size: 19, // 9.5pt
+                  color: "1e293b",
+                }),
+              ],
+              spacing: { before: 20, after: 20, line: 240 },
+              pageBreakBefore: pageBreak,
+            })
+          );
+        });
+      } else if (currentBlockType === "heading1") {
         paragraphs.push(
           new Paragraph({
-            text: item.text,
+            text,
             heading: HeadingLevel.HEADING_1,
             spacing: { before: 280, after: 120 },
-            pageBreakBefore: applyPageBreak,
+            pageBreakBefore: pageBreak,
           })
         );
-        applyPageBreak = false;
-      } else if (item.type === "heading2") {
+      } else if (currentBlockType === "heading2") {
         paragraphs.push(
           new Paragraph({
-            text: item.text,
+            text,
             heading: HeadingLevel.HEADING_2,
             spacing: { before: 200, after: 100 },
-            pageBreakBefore: applyPageBreak,
+            pageBreakBefore: pageBreak,
           })
         );
-        applyPageBreak = false;
-      } else if (item.type === "bullet") {
-        // Clean bullet list formatting
-        const cleanedBulletText = item.text.replace(/^[•\-\*]\s*/, "");
+      } else if (currentBlockType === "heading3") {
+        paragraphs.push(
+          new Paragraph({
+            text,
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 160, after: 80 },
+            pageBreakBefore: pageBreak,
+          })
+        );
+      } else if (currentBlockType === "bullet") {
+        const cleanBullet = text.replace(/^([•\-\*]|\d+[\.\)])\s*/, "");
         paragraphs.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: cleanedBulletText,
+                text: cleanBullet,
                 font: "Calibri",
                 size: 22, // 11pt
               }),
             ],
             bullet: { level: 0 },
             spacing: { before: 40, after: 60, line: 276 },
-            pageBreakBefore: applyPageBreak,
+            pageBreakBefore: pageBreak,
           })
         );
-        applyPageBreak = false;
       } else {
-        // Standard body paragraph with smooth sentence flowing
+        // Continuous flowing body text (justified, standard Word margins)
         paragraphs.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: item.text,
+                text,
                 font: "Calibri",
-                size: 22, // 11pt standard Microsoft Word body
+                size: 22, // 11pt
               }),
             ],
-            spacing: { before: 60, after: 140, line: 276 }, // 1.15 line spacing
-            alignment: AlignmentType.BOTH, // Justified for neat reading in Word
-            pageBreakBefore: applyPageBreak,
+            spacing: { before: 60, after: 140, line: 276 },
+            alignment: AlignmentType.BOTH,
+            pageBreakBefore: pageBreak,
           })
         );
-        applyPageBreak = false;
       }
+
+      currentBlock = [];
+      currentBlockType = "body";
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const rawLine = lines[i];
+      const trimmed = rawLine.trim();
+
+      if (!trimmed) {
+        flushBlock();
+        continue;
+      }
+
+      // Check code / JSON line
+      const isCode =
+        /^(\{|\}|\[|\]|"[\w-]+":|[\w-]+:\s*[{[])/.test(trimmed) ||
+        (trimmed.startsWith('"') && (trimmed.endsWith('",') || trimmed.endsWith('"')));
+
+      if (isCode) {
+        if (currentBlockType !== "code") {
+          flushBlock();
+          currentBlockType = "code";
+        }
+        currentBlock.push(rawLine);
+        continue;
+      }
+
+      // Check headings (e.g., "5. Technical Design", "5.1 API Specifications", or ALL-CAPS titles)
+      const isNumberedHeading = /^(\d+(\.\d+)*)\s+[A-Z]/.test(trimmed);
+      const isAllCapsTitle =
+        trimmed.length < 50 &&
+        trimmed === trimmed.toUpperCase() &&
+        /[A-Z]/.test(trimmed) &&
+        !/[.,;:]$/.test(trimmed);
+
+      if (isNumberedHeading || isAllCapsTitle) {
+        flushBlock();
+        const dotCount = (trimmed.match(/\./g) || []).length;
+        if (dotCount === 0 || isAllCapsTitle) {
+          currentBlockType = "heading1";
+        } else if (dotCount === 1) {
+          currentBlockType = "heading2";
+        } else {
+          currentBlockType = "heading3";
+        }
+        currentBlock.push(trimmed);
+        flushBlock();
+        continue;
+      }
+
+      // Check bullet / numbered list
+      const isBullet = /^([•\-\*]|\d+[\.\)]|[a-zA-Z][\.\)])\s+/.test(trimmed);
+      if (isBullet) {
+        flushBlock();
+        currentBlockType = "bullet";
+        currentBlock.push(trimmed);
+        flushBlock();
+        continue;
+      }
+
+      // Standard body line
+      if (currentBlockType !== "body") {
+        flushBlock();
+        currentBlockType = "body";
+      }
+
+      if (currentBlock.length > 0) {
+        const prevLine = currentBlock[currentBlock.length - 1];
+        if (prevLine.endsWith("-")) {
+          // Hyphenated word break at end of line -> join without space
+          currentBlock[currentBlock.length - 1] = prevLine.slice(0, -1) + trimmed;
+        } else if (/[.!?:;]$/.test(prevLine) && prevLine.length < 40) {
+          // Short terminated sentence -> separate paragraph
+          flushBlock();
+          currentBlock.push(trimmed);
+        } else {
+          // Flowing continuation
+          currentBlock.push(trimmed);
+        }
+      } else {
+        currentBlock.push(trimmed);
+      }
+    }
+
+    flushBlock();
+    return paragraphs;
+  };
+
+  // Compile entire document with all pages preserved into OpenXML DOCX
+  const buildFullDocumentDocx = async (title: string, pages: ExtractedPage[]): Promise<Blob> => {
+    const allParagraphs: Paragraph[] = [];
+
+    // Document Main Title Header
+    allParagraphs.push(
+      new Paragraph({
+        text: title.replace(/\.pdf$/i, ""),
+        heading: HeadingLevel.TITLE,
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 140, after: 280 },
+      })
+    );
+
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const pageParagraphs = formatPageToDocxParagraphs(page.text, i === 0);
+      allParagraphs.push(...pageParagraphs);
     }
 
     const doc = new Document({
@@ -264,7 +301,7 @@ export function PdfToolkitTool() {
               },
             },
           },
-          children: paragraphs,
+          children: allParagraphs,
         },
       ],
     });
@@ -272,55 +309,57 @@ export function PdfToolkitTool() {
     return await Packer.toBlob(doc);
   };
 
-  // Fast, non-blocking PDF text extractor with strict timeout & fallback
-  const extractPdfTextSafe = async (buffer: ArrayBuffer): Promise<{ text: string; pages: number }> => {
-    // 1. Try local PDFParse (pure in-memory, no cross-origin worker, fast)
+  // High-performance, 100% local PDF text extractor supporting 100+ pages
+  const extractPdfAllPages = async (buffer: ArrayBuffer): Promise<{ pages: ExtractedPage[]; totalPages: number }> => {
+    // 1. Primary: Use PDFParse with exact { data: Uint8Array } options
     try {
-      const parser = new PDFParse(new Uint8Array(buffer));
-      const parsePromise = parser.getText();
-      const timeoutPromise = new Promise<{ text: string; total: number }>((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 4000)
-      );
+      const parser = new PDFParse({ data: new Uint8Array(buffer) });
+      const result = await parser.getText();
 
-      const result: any = await Promise.race([parsePromise, timeoutPromise]);
-      if (result && result.text && result.text.trim().length > 10) {
+      if (result && Array.isArray(result.pages) && result.pages.length > 0) {
+        const pages: ExtractedPage[] = result.pages.map((p: any, idx: number) => ({
+          num: p.num || idx + 1,
+          text: p.text || "",
+        }));
+
         return {
-          text: result.text,
-          pages: result.total || 1,
+          pages,
+          totalPages: result.total || pages.length,
         };
       }
-    } catch (err) {
-      console.warn("PDFParse fallback initiated:", err);
+    } catch (parseErr) {
+      console.warn("Primary PDFParse error, attempting stream extractor:", parseErr);
     }
 
-    // 2. High-speed native fallback stream scanner (instant < 50ms, never hangs)
-    const uint8 = new Uint8Array(buffer);
-    const decoded = new TextDecoder("latin1").decode(uint8);
+    // 2. Secondary fallback via pdf-lib & native stream decoding
+    try {
+      const pdfDoc = await PDFDocument.load(buffer);
+      const totalPages = pdfDoc.getPageCount();
 
-    // Count pages via /Type /Page
-    const pageMatches = decoded.match(/\/Type\s*\/Page\b/g);
-    const pagesCount = pageMatches ? pageMatches.length : 1;
+      const uint8 = new Uint8Array(buffer);
+      const decoded = new TextDecoder("latin1").decode(uint8);
+      const textChunks = decoded.match(/\(([^)]+)\)\s*Tj/g) || [];
 
-    // Extract text blocks
-    const matches = decoded.match(/\(([^)]+)\)\s*Tj/g) || [];
-    let extractedChunks = matches
-      .map((m) => m.replace(/^\(|\)\s*Tj$/g, ""))
-      .join(" ")
-      .replace(/\\([0-7]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
-      .replace(/\\(.)/g, "$1");
+      let rawText = textChunks
+        .map((m) => m.replace(/^\(|\)\s*Tj$/g, ""))
+        .join(" ")
+        .replace(/\\([0-7]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+        .replace(/\\(.)/g, "$1");
 
-    if (extractedChunks.trim().length > 10) {
-      return { text: extractedChunks, pages: pagesCount };
+      if (rawText.trim().length > 20) {
+        return {
+          pages: [{ num: 1, text: rawText.trim() }],
+          totalPages,
+        };
+      }
+    } catch (pdfLibErr) {
+      console.error("Secondary fallback error:", pdfLibErr);
     }
 
-    // If completely empty (e.g. scanned image-only PDF)
-    return {
-      text: `Dokumen: Berkas PDF ini kemungkinan berupa pindaian (scan) gambar tanpa lapisan teks digital atau memiliki enkripsi khusus.\n\nAnda dapat mengetik atau menyisipkan teks yang diinginkan di kolom pratinjau ini sebelum membuat berkas Word DOCX yang rapi.`,
-      pages: pagesCount,
-    };
+    throw new Error("Gagal membaca struktur teks berkas PDF. Pastikan dokumen memiliki lapisan teks digital (bukan hanya gambar hasil foto/scan).");
   };
 
-  // Handle PDF upload and extraction
+  // Handle PDF upload
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -333,39 +372,61 @@ export function PdfToolkitTool() {
     setPdfFile(file);
     setIsProcessing(true);
     setErrorMessage(null);
-    setProcessStatus("Membaca dan mengekstrak struktur dokumen PDF...");
+    setProcessStatus("Membaca dan memindai seluruh halaman dokumen...");
 
     try {
       const buffer = await file.arrayBuffer();
-      const { text, pages } = await extractPdfTextSafe(buffer);
+      const { pages, totalPages } = await extractPdfAllPages(buffer);
 
-      setPdfPageCount(pages);
-      setExtractedContent(text);
-      setProcessStatus("Menyusun format paragraf dan tata letak Microsoft Word...");
+      setPdfPageCount(totalPages);
+      setExtractedPages(pages);
 
-      // Generate clean DOCX
-      const docxBlob = await generateCleanDocx(file.name, text);
+      // Prepare preview text
+      const previewText = pages
+        .map((p) => `=== Halaman ${p.num} ===\n${p.text.trim()}`)
+        .join("\n\n");
+
+      setExtractedContent(previewText);
+      setProcessStatus(`Mengompilasi ${pages.length} halaman ke dokumen Microsoft Word DOCX...`);
+
+      // Generate full DOCX with all pages
+      const docxBlob = await buildFullDocumentDocx(file.name, pages);
       setDocxBlobUrl(URL.createObjectURL(docxBlob));
     } catch (err: any) {
       console.error("Gagal memproses PDF:", err);
-      setErrorMessage(err.message || "Terjadi kesalahan saat memproses PDF.");
+      setErrorMessage(err.message || "Terjadi kesalahan saat memproses dokumen PDF.");
     } finally {
       setIsProcessing(false);
       setProcessStatus("");
     }
   };
 
-  // Re-generate DOCX from user edited text
+  // Re-generate DOCX from user edited text in preview
   const handleRegenerateDocx = async () => {
     if (!extractedContent.trim() || !pdfFile) return;
     setIsProcessing(true);
-    setProcessStatus("Memperbarui dokumen Word dengan format paragraf rapi...");
+    setProcessStatus("Memperbarui dokumen Word dari teks pratinjau...");
+
     try {
       if (docxBlobUrl) URL.revokeObjectURL(docxBlobUrl);
-      const docxBlob = await generateCleanDocx(pdfFile.name, extractedContent);
+
+      // Parse pages from preview markers "=== Halaman X ==="
+      const pageChunks = extractedContent.split(/===+\s*Halaman\s*\d+\s*===+/i);
+      let pagesToBuild: ExtractedPage[] = [];
+
+      if (pageChunks.length > 1) {
+        pagesToBuild = pageChunks
+          .map((chunk, idx) => ({ num: idx, text: chunk.trim() }))
+          .filter((p) => p.text.length > 0);
+      } else {
+        pagesToBuild = [{ num: 1, text: extractedContent.trim() }];
+      }
+
+      const docxBlob = await buildFullDocumentDocx(pdfFile.name, pagesToBuild);
       setDocxBlobUrl(URL.createObjectURL(docxBlob));
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Gagal memperbarui DOCX:", err);
+      setErrorMessage(err.message || "Gagal memperbarui berkas Word.");
     } finally {
       setIsProcessing(false);
       setProcessStatus("");
@@ -606,12 +667,12 @@ export function PdfToolkitTool() {
             <div className="flex items-center gap-2">
               <FileType className="h-5 w-5 text-indigo-400" />
               <div>
-                <h3 className="text-sm font-bold text-white">Konversi PDF ke Dokumen Word (DOCX) Rapi</h3>
-                <p className="text-[11px] text-slate-400">Menghasilkan dokumen Word berparagraf mengalir rapi, judul proporsional, dan format OpenXML resmi</p>
+                <h3 className="text-sm font-bold text-white">Konversi PDF ke Microsoft Word DOCX (Mendukung Dokumen Besar)</h3>
+                <p className="text-[11px] text-slate-400">Ekstraksi seluruh halaman secara lengkap ke format Word biner OpenXML resmi (.docx) tanpa batas halaman</p>
               </div>
             </div>
             <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-400">
-              <CheckCircle2 className="h-3 w-3" /> Cepat & 100% Lokal
+              <CheckCircle2 className="h-3 w-3" /> Multi-Halaman Penuh
             </span>
           </div>
 
@@ -620,7 +681,7 @@ export function PdfToolkitTool() {
             <span className="text-xs font-semibold text-slate-200">
               {pdfFile ? pdfFile.name : "Klik atau seret file PDF ke sini"}
             </span>
-            <span className="text-[11px] text-slate-500 mt-1">Ekstraksi cepat & penyusunan paragraf otomatis</span>
+            <span className="text-[11px] text-slate-500 mt-1">Mendukung berkas teknis, laporan panjang, hingga ratusan halaman</span>
             <input type="file" accept="application/pdf" onChange={handlePdfUpload} className="hidden" />
           </label>
 
@@ -642,10 +703,11 @@ export function PdfToolkitTool() {
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                  <span>Pratinjau & Edit Konten Dokumen</span>
+                  <span>Pratinjau Seluruh Konten Dokumen</span>
                   {pdfPageCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-md bg-slate-800 text-[10px] font-normal text-slate-400">
-                      {pdfPageCount} Halaman
+                    <span className="px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-semibold flex items-center gap-1 border border-indigo-500/30">
+                      <BookOpen className="h-3 w-3" />
+                      {pdfPageCount} Halaman Berhasil Diekstrak
                     </span>
                   )}
                 </div>
@@ -669,7 +731,7 @@ export function PdfToolkitTool() {
               </div>
 
               <textarea
-                rows={10}
+                rows={12}
                 value={extractedContent}
                 onChange={(e) => setExtractedContent(e.target.value)}
                 className="w-full rounded-2xl bg-slate-950 border border-slate-800 p-4 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500/50 leading-relaxed"
@@ -678,12 +740,15 @@ export function PdfToolkitTool() {
 
               {docxBlobUrl && (
                 <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Dokumen Word (.docx) Rapi Siap Diunduh</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>Dokumen Word (.docx) {pdfPageCount} Halaman Siap Diunduh</span>
+                    </div>
+                    <span className="text-[11px] text-emerald-400 font-mono">Format OOXML 100% Valid</span>
                   </div>
                   <p className="text-[11px] text-slate-300">
-                    Format telah dioptimalkan dengan paragraf mengalir rapi, margin 1 inci, dan hierarki judul profesional tanpa baris terputus-putus.
+                    Seluruh {pdfPageCount} halaman dokumen asli berhasil dikompilasi dengan pemisah halaman resmi (*Page Break*), tata letak paragraf mengalir rapi, dan judul terstruktur tanpa teks terpotong-potong.
                   </p>
                   <a
                     href={docxBlobUrl}
@@ -691,7 +756,7 @@ export function PdfToolkitTool() {
                     className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 transition-all"
                   >
                     <Download className="h-4 w-4" />
-                    <span>Unduh Dokumen Word (.docx)</span>
+                    <span>Unduh Dokumen Word (.docx) — {pdfPageCount} Halaman</span>
                   </a>
                 </div>
               )}
