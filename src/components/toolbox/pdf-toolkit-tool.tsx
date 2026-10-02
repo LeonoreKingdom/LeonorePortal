@@ -9,15 +9,23 @@ import {
   Layers, 
   Sparkles, 
   CheckCircle2, 
-  Copy,
-  Check,
-  FileType,
-  AlertCircle,
-  Loader2,
-  Trash2
+  Copy, 
+  Check, 
+  FileType, 
+  AlertCircle, 
+  Loader2, 
+  Trash2,
+  RefreshCw
 } from "lucide-react";
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFParse } from "pdf-parse";
+
+interface ParagraphItem {
+  type: "heading1" | "heading2" | "bullet" | "body";
+  text: string;
+  isPageBreakBefore?: boolean;
+}
 
 export function PdfToolkitTool() {
   const [activeTab, setActiveTab] = useState<"pdf-to-docx" | "docx-to-pdf" | "merge" | "extract">("pdf-to-docx");
@@ -30,6 +38,7 @@ export function PdfToolkitTool() {
   const [docxBlobUrl, setDocxBlobUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [pdfPageCount, setPdfPageCount] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // DOCX / Text to PDF State
   const [inputText, setInputText] = useState<string>(
@@ -51,84 +60,198 @@ export function PdfToolkitTool() {
   const [extractedBlobUrl, setExtractedBlobUrl] = useState<string | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
 
-  // Helper to load PDF.js dynamically in browser
-  const loadPdfJs = async (): Promise<any> => {
-    if (typeof window === "undefined") return null;
-    if ((window as any).pdfjsLib) return (window as any).pdfjsLib;
+  // Intelligent paragraph and formatting reconstructor
+  const reconstructFormattedParagraphs = (rawText: string): ParagraphItem[] => {
+    // 1. Clean up automatic page indicators like "-- 1 of 5 --"
+    const cleaned = rawText.replace(/--\s*\d+\s+of\s+\d+\s*--/gi, "");
+    const rawLines = cleaned.split("\n");
+    const items: ParagraphItem[] = [];
 
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-      script.async = true;
-      script.onload = () => {
-        const lib = (window as any).pdfjsLib;
-        if (lib) {
-          lib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-          resolve(lib);
+    let currentBuffer = "";
+    let isCurrentBullet = false;
+
+    const flushCurrent = () => {
+      const trimmed = currentBuffer.trim();
+      if (!trimmed) {
+        currentBuffer = "";
+        isCurrentBullet = false;
+        return;
+      }
+
+      if (isCurrentBullet) {
+        items.push({ type: "bullet", text: trimmed });
+      } else {
+        // Detect Heading 1 or Heading 2
+        const isHeading = 
+          trimmed.length < 75 && 
+          !/[.,;:]$/.test(trimmed) && 
+          ((trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed)) || 
+           /^(BAB\s+[IVXLCDM\d]+|PASAL\s+\d+|CHAPTER\s+\d+|BAGIAN\s+\d+)/i.test(trimmed));
+        
+        if (isHeading) {
+          items.push({ type: trimmed.length < 40 ? "heading1" : "heading2", text: trimmed });
         } else {
-          reject(new Error("pdfjsLib tidak ditemukan setelah skrip dimuat."));
+          items.push({ type: "body", text: trimmed });
         }
-      };
-      script.onerror = () => reject(new Error("Gagal mengunduh modul PDF.js."));
-      document.head.appendChild(script);
-    });
+      }
+      currentBuffer = "";
+      isCurrentBullet = false;
+    };
+
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i].trim();
+
+      // Empty line -> explicit paragraph break
+      if (!line) {
+        flushCurrent();
+        continue;
+      }
+
+      // Check if page separator exists
+      if (/^\[PageBreak\]|^---+\s*Halaman\s*\d+/i.test(line)) {
+        flushCurrent();
+        if (items.length > 0) {
+          // Mark next paragraph with page break
+          items.push({ type: "body", text: "", isPageBreakBefore: true });
+        }
+        continue;
+      }
+
+      // Check for bullet / numbered list item
+      const isBullet = /^([•\-\*]|\d+[\.\)]|[a-zA-Z][\.\)])\s+/.test(line);
+
+      if (isBullet) {
+        flushCurrent();
+        currentBuffer = line;
+        isCurrentBullet = true;
+      } else if (isCurrentBullet) {
+        // Continuing a bullet item or new item?
+        flushCurrent();
+        currentBuffer = line;
+      } else {
+        if (!currentBuffer) {
+          currentBuffer = line;
+        } else {
+          // Check if previous line ended with hyphen (word break)
+          if (currentBuffer.endsWith("-")) {
+            currentBuffer = currentBuffer.slice(0, -1) + line;
+          } else if (/[.!?:;]$/.test(currentBuffer)) {
+            // Line ended with terminal punctuation -> check if it's a new sentence or new paragraph
+            // If the current line is short and previous was punctuated, flush as separate paragraph
+            if (currentBuffer.length < 40) {
+              flushCurrent();
+              currentBuffer = line;
+            } else {
+              // Standard sentence flow
+              currentBuffer += " " + line;
+            }
+          } else {
+            // Flowing continuous line within the same paragraph (avoids jagged lines in Word!)
+            currentBuffer += " " + line;
+          }
+        }
+      }
+    }
+
+    flushCurrent();
+    return items;
   };
 
-  // Generate valid Word DOCX binary blob using docx library
-  const generateValidDocx = async (title: string, content: string): Promise<Blob> => {
+  // Generate valid Word DOCX with professional formatting
+  const generateCleanDocx = async (title: string, rawText: string): Promise<Blob> => {
+    const parsedItems = reconstructFormattedParagraphs(rawText);
     const paragraphs: Paragraph[] = [];
 
-    // Title paragraph
+    // Main Document Header Title
     paragraphs.push(
       new Paragraph({
         text: title.replace(/\.pdf$/i, ""),
-        heading: HeadingLevel.HEADING_1,
-        spacing: { after: 240, before: 100 },
+        heading: HeadingLevel.TITLE,
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 120, after: 280 },
       })
     );
 
-    // Split text into paragraphs
-    const rawParagraphs = content.split(/\n\s*\n/);
+    let applyPageBreak = false;
 
-    for (const rawPara of rawParagraphs) {
-      const trimmed = rawPara.trim();
-      if (!trimmed) continue;
+    for (const item of parsedItems) {
+      if (item.isPageBreakBefore) {
+        applyPageBreak = true;
+        continue;
+      }
 
-      if (trimmed.startsWith("--- Halaman") || trimmed.startsWith("=== Halaman")) {
+      if (!item.text) continue;
+
+      if (item.type === "heading1") {
         paragraphs.push(
           new Paragraph({
-            text: trimmed,
+            text: item.text,
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 280, after: 120 },
+            pageBreakBefore: applyPageBreak,
+          })
+        );
+        applyPageBreak = false;
+      } else if (item.type === "heading2") {
+        paragraphs.push(
+          new Paragraph({
+            text: item.text,
             heading: HeadingLevel.HEADING_2,
-            spacing: { before: 200, after: 120 },
+            spacing: { before: 200, after: 100 },
+            pageBreakBefore: applyPageBreak,
           })
         );
-      } else {
-        const lines = trimmed.split("\n");
-        const children: TextRun[] = [];
-
-        lines.forEach((line, idx) => {
-          children.push(
-            new TextRun({
-              text: line.trim(),
-              size: 24, // 12pt
-              font: "Calibri",
-            })
-          );
-          if (idx < lines.length - 1) {
-            children.push(new TextRun({ break: 1 }));
-          }
-        });
-
+        applyPageBreak = false;
+      } else if (item.type === "bullet") {
+        // Clean bullet list formatting
+        const cleanedBulletText = item.text.replace(/^[•\-\*]\s*/, "");
         paragraphs.push(
           new Paragraph({
-            children,
-            spacing: { after: 160, line: 280 },
+            children: [
+              new TextRun({
+                text: cleanedBulletText,
+                font: "Calibri",
+                size: 22, // 11pt
+              }),
+            ],
+            bullet: { level: 0 },
+            spacing: { before: 40, after: 60, line: 276 },
+            pageBreakBefore: applyPageBreak,
           })
         );
+        applyPageBreak = false;
+      } else {
+        // Standard body paragraph with smooth sentence flowing
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: item.text,
+                font: "Calibri",
+                size: 22, // 11pt standard Microsoft Word body
+              }),
+            ],
+            spacing: { before: 60, after: 140, line: 276 }, // 1.15 line spacing
+            alignment: AlignmentType.BOTH, // Justified for neat reading in Word
+            pageBreakBefore: applyPageBreak,
+          })
+        );
+        applyPageBreak = false;
       }
     }
 
     const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Calibri",
+              size: 22,
+              color: "1e293b",
+            },
+          },
+        },
+      },
       sections: [
         {
           properties: {
@@ -149,6 +272,54 @@ export function PdfToolkitTool() {
     return await Packer.toBlob(doc);
   };
 
+  // Fast, non-blocking PDF text extractor with strict timeout & fallback
+  const extractPdfTextSafe = async (buffer: ArrayBuffer): Promise<{ text: string; pages: number }> => {
+    // 1. Try local PDFParse (pure in-memory, no cross-origin worker, fast)
+    try {
+      const parser = new PDFParse(new Uint8Array(buffer));
+      const parsePromise = parser.getText();
+      const timeoutPromise = new Promise<{ text: string; total: number }>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 4000)
+      );
+
+      const result: any = await Promise.race([parsePromise, timeoutPromise]);
+      if (result && result.text && result.text.trim().length > 10) {
+        return {
+          text: result.text,
+          pages: result.total || 1,
+        };
+      }
+    } catch (err) {
+      console.warn("PDFParse fallback initiated:", err);
+    }
+
+    // 2. High-speed native fallback stream scanner (instant < 50ms, never hangs)
+    const uint8 = new Uint8Array(buffer);
+    const decoded = new TextDecoder("latin1").decode(uint8);
+
+    // Count pages via /Type /Page
+    const pageMatches = decoded.match(/\/Type\s*\/Page\b/g);
+    const pagesCount = pageMatches ? pageMatches.length : 1;
+
+    // Extract text blocks
+    const matches = decoded.match(/\(([^)]+)\)\s*Tj/g) || [];
+    let extractedChunks = matches
+      .map((m) => m.replace(/^\(|\)\s*Tj$/g, ""))
+      .join(" ")
+      .replace(/\\([0-7]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+      .replace(/\\(.)/g, "$1");
+
+    if (extractedChunks.trim().length > 10) {
+      return { text: extractedChunks, pages: pagesCount };
+    }
+
+    // If completely empty (e.g. scanned image-only PDF)
+    return {
+      text: `Dokumen: Berkas PDF ini kemungkinan berupa pindaian (scan) gambar tanpa lapisan teks digital atau memiliki enkripsi khusus.\n\nAnda dapat mengetik atau menyisipkan teks yang diinginkan di kolom pratinjau ini sebelum membuat berkas Word DOCX yang rapi.`,
+      pages: pagesCount,
+    };
+  };
+
   // Handle PDF upload and extraction
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -161,87 +332,37 @@ export function PdfToolkitTool() {
 
     setPdfFile(file);
     setIsProcessing(true);
-    setProcessStatus("Memuat dokumen dan mesin pembaca PDF...");
+    setErrorMessage(null);
+    setProcessStatus("Membaca dan mengekstrak struktur dokumen PDF...");
 
     try {
       const buffer = await file.arrayBuffer();
-      let extractedPages: string[] = [];
-      let totalPages = 1;
+      const { text, pages } = await extractPdfTextSafe(buffer);
 
-      try {
-        const pdfjs = await loadPdfJs();
-        const loadingTask = pdfjs.getDocument({ data: new Uint8Array(buffer) });
-        const pdfDoc = await loadingTask.promise;
-        totalPages = pdfDoc.numPages;
-        setPdfPageCount(totalPages);
+      setPdfPageCount(pages);
+      setExtractedContent(text);
+      setProcessStatus("Menyusun format paragraf dan tata letak Microsoft Word...");
 
-        for (let i = 1; i <= totalPages; i++) {
-          setProcessStatus(`Mengekstrak teks halaman ${i} dari ${totalPages}...`);
-          const page = await pdfDoc.getPage(i);
-          const textContent = await page.getTextContent();
-          
-          let pageText = "";
-          let lastY: number | null = null;
-
-          for (const item of textContent.items as any[]) {
-            const currentY = item.transform ? item.transform[5] : 0;
-            if (lastY !== null && Math.abs(currentY - lastY) > 5) {
-              pageText += "\n" + item.str;
-            } else {
-              pageText += (pageText ? " " : "") + item.str;
-            }
-            lastY = currentY;
-          }
-
-          if (pageText.trim()) {
-            extractedPages.push(`--- Halaman ${i} ---\n` + pageText.trim());
-          }
-        }
-      } catch (pdfErr) {
-        console.warn("PDF.js extractor fallback:", pdfErr);
-        // Fallback simple stream regex
-        const textDecoded = new TextDecoder("latin1").decode(new Uint8Array(buffer));
-        const streamMatches = textDecoded.match(/\((.*?)\)\s*Tj/g) || [];
-        const cleanText = streamMatches
-          .map((s) => s.replace(/^\(|\)\s*Tj$/g, ""))
-          .join(" ")
-          .replace(/\\(\d{3})/g, "")
-          .replace(/\\\(/g, "(")
-          .replace(/\\\)/g, ")");
-
-        if (cleanText.trim()) {
-          extractedPages.push(cleanText.trim());
-        }
-      }
-
-      let finalText = extractedPages.join("\n\n");
-      if (!finalText.trim()) {
-        finalText = `Dokumen: ${file.name}\nUkuran: ${(file.size / 1024).toFixed(1)} KB\n\n(Catatan: Berkas PDF ini kemungkinan berupa hasil scan gambar/foto atau menggunakan proteksi enkripsi teks khusus. Anda dapat mengetik atau mengedit teks tambahan di bawah ini sebelum membuat berkas Word DOCX.)`;
-      }
-
-      setExtractedContent(finalText);
-      setProcessStatus("Menyusun berkas Word DOCX berstandar OpenXML...");
-
-      // Generate valid binary DOCX
-      const docxBlob = await generateValidDocx(file.name, finalText);
+      // Generate clean DOCX
+      const docxBlob = await generateCleanDocx(file.name, text);
       setDocxBlobUrl(URL.createObjectURL(docxBlob));
     } catch (err: any) {
-      console.error("Gagal mengekstrak PDF:", err);
-      setExtractedContent(`Terjadi kesalahan saat memproses PDF: ${err.message || "Format tidak didukung"}`);
+      console.error("Gagal memproses PDF:", err);
+      setErrorMessage(err.message || "Terjadi kesalahan saat memproses PDF.");
     } finally {
       setIsProcessing(false);
       setProcessStatus("");
     }
   };
 
-  // Re-generate DOCX when user edits the text
+  // Re-generate DOCX from user edited text
   const handleRegenerateDocx = async () => {
     if (!extractedContent.trim() || !pdfFile) return;
     setIsProcessing(true);
-    setProcessStatus("Memperbarui dokumen Word DOCX...");
+    setProcessStatus("Memperbarui dokumen Word dengan format paragraf rapi...");
     try {
       if (docxBlobUrl) URL.revokeObjectURL(docxBlobUrl);
-      const docxBlob = await generateValidDocx(pdfFile.name, extractedContent);
+      const docxBlob = await generateCleanDocx(pdfFile.name, extractedContent);
       setDocxBlobUrl(URL.createObjectURL(docxBlob));
     } catch (err) {
       console.error(err);
@@ -251,7 +372,7 @@ export function PdfToolkitTool() {
     }
   };
 
-  // Copy extracted text
+  // Copy text
   const handleCopyText = () => {
     if (!extractedContent) return;
     navigator.clipboard.writeText(extractedContent);
@@ -259,7 +380,7 @@ export function PdfToolkitTool() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Convert text / markdown to PDF using pdf-lib
+  // Convert text to PDF with pdf-lib
   const handleConvertTextToPdf = async () => {
     if (!inputText.trim()) return;
     setIsCompilingPdf(true);
@@ -272,14 +393,13 @@ export function PdfToolkitTool() {
       const fontSize = 11;
       const lineHeight = 16;
       const margin = 50;
-      const pageWidth = 595.28; // A4 Width
-      const pageHeight = 841.89; // A4 Height
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
       const printableWidth = pageWidth - margin * 2;
 
       let page = pdfDoc.addPage([pageWidth, pageHeight]);
       let y = pageHeight - margin;
 
-      // Document Title Header
       page.drawText("Dokumen Hasil Kompilasi", {
         x: margin,
         y: y,
@@ -296,13 +416,12 @@ export function PdfToolkitTool() {
           continue;
         }
 
-        const isHeading = rawLine.startsWith("#") || rawLine.toUpperCase() === rawLine && rawLine.length < 40;
+        const isHeading = rawLine.startsWith("#") || (rawLine.toUpperCase() === rawLine && rawLine.length < 40);
         const currentFont = isHeading ? boldFont : font;
         const currentSize = isHeading ? 13 : fontSize;
         const currentLineHeight = isHeading ? 20 : lineHeight;
         const cleanedText = rawLine.replace(/^#+\s*/, "");
 
-        // Word wrap
         const words = cleanedText.split(" ");
         let lineBuffer = "";
 
@@ -356,7 +475,7 @@ export function PdfToolkitTool() {
     }
   };
 
-  // Merge Multiple PDFs using pdf-lib
+  // Merge Multiple PDFs with pdf-lib
   const handleMergePdfs = async () => {
     if (mergeFiles.length < 2) return;
     setIsMerging(true);
@@ -382,7 +501,7 @@ export function PdfToolkitTool() {
     }
   };
 
-  // Extract / Split Specific Pages using pdf-lib
+  // Extract Pages with pdf-lib
   const handleExtractPages = async () => {
     if (!extractFile) return;
     setIsExtracting(true);
@@ -418,7 +537,7 @@ export function PdfToolkitTool() {
       }
 
       if (targetIndices.size === 0) {
-        throw new Error(`Tidak ada halaman valid dalam rentang. Berkas memiliki ${totalPages} halaman.`);
+        throw new Error(`Tidak ada nomor halaman valid. Berkas memiliki ${totalPages} halaman.`);
       }
 
       const sortedIndices = Array.from(targetIndices).sort((a, b) => a - b);
@@ -487,12 +606,12 @@ export function PdfToolkitTool() {
             <div className="flex items-center gap-2">
               <FileType className="h-5 w-5 text-indigo-400" />
               <div>
-                <h3 className="text-sm font-bold text-white">Konversi PDF ke Microsoft Word DOCX Standar</h3>
-                <p className="text-[11px] text-slate-400">Menghasilkan berkas Word .docx biner OpenXML asli yang dapat dibuka tanpa error di Microsoft Word</p>
+                <h3 className="text-sm font-bold text-white">Konversi PDF ke Dokumen Word (DOCX) Rapi</h3>
+                <p className="text-[11px] text-slate-400">Menghasilkan dokumen Word berparagraf mengalir rapi, judul proporsional, dan format OpenXML resmi</p>
               </div>
             </div>
             <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-400">
-              <CheckCircle2 className="h-3 w-3" /> 100% Client-side
+              <CheckCircle2 className="h-3 w-3" /> Cepat & 100% Lokal
             </span>
           </div>
 
@@ -501,7 +620,7 @@ export function PdfToolkitTool() {
             <span className="text-xs font-semibold text-slate-200">
               {pdfFile ? pdfFile.name : "Klik atau seret file PDF ke sini"}
             </span>
-            <span className="text-[11px] text-slate-500 mt-1">Ekstraksi teks penuh & penyusunan struktur dokumen Word (.docx)</span>
+            <span className="text-[11px] text-slate-500 mt-1">Ekstraksi cepat & penyusunan paragraf otomatis</span>
             <input type="file" accept="application/pdf" onChange={handlePdfUpload} className="hidden" />
           </label>
 
@@ -512,11 +631,18 @@ export function PdfToolkitTool() {
             </div>
           )}
 
+          {errorMessage && (
+            <div className="flex items-center gap-2 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+              <AlertCircle className="h-4 w-4 text-rose-400 flex-shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {extractedContent && !isProcessing && (
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                  <span>Pratinjau & Edit Konten Teks</span>
+                  <span>Pratinjau & Edit Konten Dokumen</span>
                   {pdfPageCount > 0 && (
                     <span className="px-2 py-0.5 rounded-md bg-slate-800 text-[10px] font-normal text-slate-400">
                       {pdfPageCount} Halaman
@@ -536,7 +662,7 @@ export function PdfToolkitTool() {
                     title="Perbarui berkas DOCX dari teks yang telah diedit"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 text-xs border border-indigo-500/30 transition-colors"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+                    <RefreshCw className="h-3.5 w-3.5 text-indigo-400" />
                     <span>Perbarui DOCX</span>
                   </button>
                 </div>
@@ -554,10 +680,10 @@ export function PdfToolkitTool() {
                 <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Dokumen Word (.docx) Valid Siap Diunduh</span>
+                    <span>Dokumen Word (.docx) Rapi Siap Diunduh</span>
                   </div>
                   <p className="text-[11px] text-slate-300">
-                    Berkas ini dikemas sebagai arsip OpenXML berstandar internasional sehingga kompatibel penuh dan dapat langsung dibuka di Microsoft Word tanpa pesan peringatan rusak/unreadable.
+                    Format telah dioptimalkan dengan paragraf mengalir rapi, margin 1 inci, dan hierarki judul profesional tanpa baris terputus-putus.
                   </p>
                   <a
                     href={docxBlobUrl}
@@ -574,7 +700,7 @@ export function PdfToolkitTool() {
         </div>
       )}
 
-      {/* Tab 2: Text / DOCX to PDF */}
+      {/* Tab 2: Text to PDF */}
       {activeTab === "docx-to-pdf" && (
         <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl space-y-5 max-w-3xl mx-auto">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
